@@ -1,11 +1,53 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Toaster } from "@/components/ui/toaster"
-import AddProblemForm from "@/components/add-problem-form"
-import RecentProblems from "@/components/recent-problems"
-import { Navbar } from "@/components/navbar"
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Toaster } from "@/components/ui/toaster";
+import AddProblemForm from "@/components/add-problem-form";
+import RecentProblems from "@/components/recent-problems";
+import { Navbar } from "@/components/navbar";
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+        console.log("Dashboard user check:", { user, error });
+
+        if (error || !user) {
+          router.push("/auth/login");
+        }
+      } catch (error) {
+        console.error("Dashboard error:", error);
+        router.push("/auth/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
+  }, [router, supabase]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -17,16 +59,22 @@ export default function Dashboard() {
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Solved</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Total Solved
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">89</div>
-                    <p className="text-xs text-muted-foreground">+2 from last week</p>
+                    <p className="text-xs text-muted-foreground">
+                      +2 from last week
+                    </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Current Streak</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Current Streak
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">7 days</div>
@@ -35,7 +83,9 @@ export default function Dashboard() {
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Completion Rate
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">68%</div>
@@ -44,11 +94,15 @@ export default function Dashboard() {
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Time Spent</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Time Spent
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">143 hours</div>
-                    <p className="text-xs text-muted-foreground">Across all problems</p>
+                    <p className="text-xs text-muted-foreground">
+                      Across all problems
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -56,7 +110,9 @@ export default function Dashboard() {
                 <Card className="col-span-2 md:col-span-1">
                   <CardHeader>
                     <CardTitle>Recent Problems</CardTitle>
-                    <CardDescription>Your recently solved LeetCode problems</CardDescription>
+                    <CardDescription>
+                      Your recently solved LeetCode problems
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <RecentProblems />
@@ -65,7 +121,9 @@ export default function Dashboard() {
                 <Card className="col-span-2 md:col-span-1">
                   <CardHeader>
                     <CardTitle>Add New Problem</CardTitle>
-                    <CardDescription>Record your latest conquest</CardDescription>
+                    <CardDescription>
+                      Record your latest conquest
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <AddProblemForm />
@@ -78,6 +136,5 @@ export default function Dashboard() {
       </main>
       <Toaster />
     </div>
-  )
+  );
 }
-

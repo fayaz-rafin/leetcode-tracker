@@ -1,9 +1,9 @@
+// app/auth/signup/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,47 +19,35 @@ import { supabase } from "@/lib/supabase";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
       setLoading(true);
 
-      // Sign up with Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-      });
-
-      if (authError) throw authError;
-
-      // Create user in your database
-      const response = await fetch("/api/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
-        body: JSON.stringify({
-          name,
-          email,
-          auth_id: authData.user?.id,
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create user");
-      }
+      if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Account created successfully!",
+        title: "Check your email",
+        description:
+          "We've sent you a confirmation link. Please check your email.",
       });
 
-      router.push("/auth/login");
+      // Show confirmation message instead of redirecting
+      setEmail("");
+      setPassword("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -81,16 +69,6 @@ export default function SignUpPage() {
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -109,10 +87,11 @@ export default function SignUpPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Loading..." : "Sign Up"}
+              {loading ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
