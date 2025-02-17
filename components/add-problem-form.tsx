@@ -25,11 +25,18 @@ export default function AddProblemForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!problemNumber || !problemName) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
-      console.log("Attempting to add problem...");
 
-      // Get the current user
       const {
         data: { user },
         error: userError,
@@ -39,50 +46,110 @@ export default function AddProblemForm({
         throw new Error("User not authenticated");
       }
 
-      // Validate inputs
-      if (!problemNumber || !problemName || !difficulty) {
-        throw new Error("Please fill in all fields");
+      // First, get the existing problem if it exists
+      const { data: existingProblems, error: searchError } = await supabase
+        .from("problems")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("number", parseInt(problemNumber));
+
+      if (searchError) {
+        throw searchError;
       }
 
-      // Insert the problem
-      const { error: insertError } = await supabase.from("problems").insert({
-        user_id: user.id,
-        number: parseInt(problemNumber),
-        name: problemName,
-        difficulty,
-        date_solved: new Date().toISOString(),
-      });
+      if (existingProblems && existingProblems.length > 0) {
+        const existingProblem = existingProblems[0];
 
-      if (insertError) {
-        console.error("Insert error:", insertError);
-        throw new Error(insertError.message);
+        // Perform a raw update using SQL
+        const { data, error: updateError } = await supabase.rpc(
+          "increment_problem_solved",
+          {
+            problem_id: existingProblem.id,
+            user_id_input: user.id,
+            new_difficulty: difficulty,
+            new_name: problemName,
+          }
+        );
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        toast({
+          title: "Success",
+          description: `Problem updated! Solved ${
+            existingProblem.times_solved + 1
+          } times.`,
+        });
+      } else {
+        // Insert new problem
+        const { error: insertError } = await supabase.from("problems").insert({
+          user_id: user.id,
+          number: parseInt(problemNumber),
+          name: problemName,
+          difficulty,
+          date_solved: new Date().toISOString(),
+          times_solved: 1,
+        });
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        toast({
+          title: "Success",
+          description: "Problem added successfully!",
+        });
       }
-
-      console.log("Problem added successfully");
-
-      toast({
-        title: "Success",
-        description: "Problem added successfully!",
-      });
 
       // Reset form
       setProblemNumber("");
       setProblemName("");
       setDifficulty("Easy");
 
-      // Trigger refresh of problems list and stats
+      // Trigger refresh
       if (onProblemAdded) {
         onProblemAdded();
       }
     } catch (error: any) {
-      console.error("Error adding problem:", error);
+      console.error("Error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to add problem",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProblemNumberChange = async (value: string) => {
+    setProblemNumber(value);
+    if (value) {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { data: existingProblems } = await supabase
+            .from("problems")
+            .select("name, difficulty, times_solved")
+            .eq("user_id", user.id)
+            .eq("number", parseInt(value))
+            .limit(1);
+
+          if (existingProblems && existingProblems.length > 0) {
+            setProblemName(existingProblems[0].name);
+            setDifficulty(existingProblems[0].difficulty);
+          } else {
+            setProblemName("");
+          }
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    } else {
+      setProblemName("");
     }
   };
 
@@ -95,7 +162,7 @@ export default function AddProblemForm({
           type="number"
           placeholder="Enter problem number"
           value={problemNumber}
-          onChange={(e) => setProblemNumber(e.target.value)}
+          onChange={(e) => handleProblemNumberChange(e.target.value)}
           required
           min="1"
           className="w-full"

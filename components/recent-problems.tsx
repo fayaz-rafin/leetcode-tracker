@@ -1,4 +1,3 @@
-// components/recent-problems.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,6 +10,7 @@ type Problem = {
   name: string;
   difficulty: string;
   date_solved: string;
+  times_solved: number;
 };
 
 interface RecentProblemsProps {
@@ -46,7 +46,6 @@ export default function RecentProblems({
     fetchProblems();
   }, []);
 
-  // Add a listener for real-time updates
   useEffect(() => {
     const channel = supabase
       .channel("problems_changes")
@@ -96,9 +95,15 @@ export default function RecentProblems({
             <div className="ml-4 space-y-1">
               <p className="text-sm font-medium leading-none">
                 {problem.number}. {problem.name}
+                {problem.times_solved > 1 && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    (Solved {problem.times_solved} times)
+                  </span>
+                )}
               </p>
               <p className="text-sm text-muted-foreground">
-                Solved on {new Date(problem.date_solved).toLocaleDateString()}
+                Last solved on{" "}
+                {new Date(problem.date_solved).toLocaleDateString()}
               </p>
             </div>
           </div>
