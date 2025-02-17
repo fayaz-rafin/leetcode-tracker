@@ -1,29 +1,14 @@
-import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Toaster } from "@/components/ui/toaster"
 import AddProblemForm from "@/components/add-problem-form"
 import RecentProblems from "@/components/recent-problems"
+import { Navbar } from "@/components/navbar"
 
 export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 h-14 flex items-center">
-        <Link className="flex items-center justify-center" href="/">
-          <span className="font-bold text-lg">LeetCode Tracker</span>
-        </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/dashboard">
-            Dashboard
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/all-problems">
-            All Problems
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Statistics
-          </Link>
-        </nav>
-      </header>
+      <Navbar />
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">

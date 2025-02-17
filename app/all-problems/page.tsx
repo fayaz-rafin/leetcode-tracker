@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { ArrowUpDown } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Navbar } from "@/components/navbar"
 
 // Mock data for LeetCode problems
 const initialProblems = [
@@ -76,22 +76,7 @@ export default function AllProblems() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 h-14 flex items-center">
-        <Link className="flex items-center justify-center" href="/">
-          <span className="font-bold text-lg">LeetCode Tracker</span>
-        </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/dashboard">
-            Dashboard
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/all-problems">
-            All Problems
-          </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            Statistics
-          </Link>
-        </nav>
-      </header>
+      <Navbar />
       <main className="flex-1 py-12">
         <div className="container px-4 md:px-6">
           <h1 className="text-3xl font-bold mb-6">All Solved Problems</h1>
