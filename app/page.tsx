@@ -17,7 +17,7 @@ export default function HomePage() {
           <Link className="text-sm font-medium hover:underline underline-offset-4" href="#about">
             About
           </Link>
-          <Link href="/dashboard">
+          <Link href="/auth/login">
             <Button variant="outline">Log In</Button>
           </Link>
         </nav>
@@ -35,8 +35,11 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="space-x-4">
+                <Link href="/auth/signup">
                 <Button>Sign Up</Button>
-                <Link href="/dashboard">
+                </Link>
+
+                <Link href="/auth/login">
                   <Button variant="outline">Log In</Button>
                 </Link>
               </div>
