@@ -1,24 +1,25 @@
 // app/leaderboard/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Trophy, Flame, Hash, ChevronLeft, ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Navbar } from "@/components/navbar";
 
 type LeaderboardUser = {
   id: string;
   username: string;
   avatar_url: string | null;
-  bio: string | null;
-  problems: {
-    count: number;
-  }[];
+  total_problems: number;
   current_streak: number;
 };
 
@@ -30,58 +31,82 @@ export default function LeaderboardPage() {
   );
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [leaderboardType, page]);
+  }, [leaderboardType, currentPage]);
 
   async function fetchLeaderboard() {
     try {
       setLoading(true);
-      const offset = (page - 1) * USERS_PER_PAGE;
 
       if (leaderboardType === "problems") {
-        const { data, error, count } = await supabase
+        // Get all users with usernames
+        const { data: profiles, error: profileError } = await supabase
           .from("profiles")
-          .select(
-            `
-            id,
-            username,
-            avatar_url,
-            bio,
-            problems:problems(count),
-            current_streak
-          `,
-            { count: "exact" }
-          )
-          .order("problems", { ascending: false })
-          .range(offset, offset + USERS_PER_PAGE - 1);
+          .select("id, username, avatar_url, current_streak")
+          .not("username", "is", null);
 
-        if (error) throw error;
-        setUsers(data || []);
-        if (count) setTotalUsers(count);
+        if (profileError) throw profileError;
+
+        // Get problem counts for each user
+        const userProblems = await Promise.all(
+          profiles.map(async (profile) => {
+            const { data, error } = await supabase
+              .from("problems")
+              .select("number", { count: "exact", head: false })
+              .eq("user_id", profile.id)
+              .limit(1000);
+
+            if (error) throw error;
+
+            return {
+              ...profile,
+              total_problems: data?.length || 0,
+            };
+          })
+        );
+
+        // Sort by total problems
+        const sortedUsers = userProblems.sort(
+          (a, b) => b.total_problems - a.total_problems
+        );
+        setTotalUsers(sortedUsers.length);
+
+        // Get current page of users
+        const startIndex = (currentPage - 1) * USERS_PER_PAGE;
+        const endIndex = startIndex + USERS_PER_PAGE;
+        setUsers(sortedUsers.slice(startIndex, endIndex));
       } else {
-        const { data, error, count } = await supabase
+        // Get users sorted by streak
+        const {
+          data: usersByStreak,
+          count,
+          error: streakError,
+        } = await supabase
           .from("profiles")
-          .select(
-            `
-            id,
-            username,
-            avatar_url,
-            bio,
-            problems:problems(count),
-            current_streak
-          `,
-            { count: "exact" }
-          )
+          .select("id, username, avatar_url, current_streak", {
+            count: "exact",
+          })
+          .not("username", "is", null)
           .order("current_streak", { ascending: false })
-          .range(offset, offset + USERS_PER_PAGE - 1);
+          .range(
+            (currentPage - 1) * USERS_PER_PAGE,
+            currentPage * USERS_PER_PAGE - 1
+          );
 
-        if (error) throw error;
-        setUsers(data || []);
+        if (streakError) throw streakError;
+
+        setUsers(
+          usersByStreak?.map((user) => ({
+            ...user,
+            total_problems: 0,
+          })) || []
+        );
+
         if (count) setTotalUsers(count);
       }
     } catch (error) {
@@ -93,39 +118,47 @@ export default function LeaderboardPage() {
 
   const totalPages = Math.ceil(totalUsers / USERS_PER_PAGE);
 
+  const getTrophyIcon = (index: number) => {
+    switch (index) {
+      case 0:
+        return <Trophy className="h-5 w-5 text-yellow-500" />;
+      case 1:
+        return <Trophy className="h-5 w-5 text-gray-400" />;
+      case 2:
+        return <Trophy className="h-5 w-5 text-amber-600" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 py-6 md:py-12">
-        <div className="container px-4 md:px-6 max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 md:mb-8">
+      <main className="flex-1 py-6">
+        <div className="container px-4 max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Leaderboard</h1>
-              <p className="text-sm md:text-base text-muted-foreground mt-1">
+              <h1 className="text-2xl font-bold">Leaderboard</h1>
+              <p className="text-sm text-muted-foreground">
                 See how you stack up against other members
               </p>
             </div>
             <div className="flex gap-2">
               <Button
                 variant={leaderboardType === "problems" ? "default" : "outline"}
-                size="sm"
-                className="h-8 md:h-9"
                 onClick={() => {
                   setLeaderboardType("problems");
-                  setPage(1);
+                  setCurrentPage(1);
                 }}
               >
                 <Hash className="h-4 w-4 mr-1" />
-                <span className="hidden md:inline">Problems</span>
-                <span className="md:hidden">Solved</span>
+                Problems Solved
               </Button>
               <Button
                 variant={leaderboardType === "streak" ? "default" : "outline"}
-                size="sm"
-                className="h-8 md:h-9"
                 onClick={() => {
                   setLeaderboardType("streak");
-                  setPage(1);
+                  setCurrentPage(1);
                 }}
               >
                 <Flame className="h-4 w-4 mr-1" />
@@ -137,106 +170,94 @@ export default function LeaderboardPage() {
           <Card>
             <CardContent className="p-0">
               {loading ? (
-                <div className="space-y-4 p-4">
+                <div className="p-4 space-y-4">
                   {Array(USERS_PER_PAGE)
                     .fill(0)
                     .map((_, i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <Skeleton className="h-6 w-6" />
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-3 w-32" />
-                        </div>
-                        <Skeleton className="h-4 w-12" />
+                      <div
+                        key={i}
+                        className="flex items-center gap-4 p-2 animate-pulse"
+                      >
+                        <div className="w-8 h-4 bg-gray-200 rounded" />
+                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                        <div className="flex-1 h-4 bg-gray-200 rounded" />
+                        <div className="w-20 h-4 bg-gray-200 rounded" />
                       </div>
                     ))}
                 </div>
               ) : (
-                <div className="divide-y">
-                  {users.map((user, index) => (
-                    <Link
-                      key={user.id}
-                      href={`/users/${user.id}`}
-                      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center justify-center w-8 md:w-10">
-                        {index === 0 && (
-                          <Trophy className="h-5 w-5 text-yellow-500" />
-                        )}
-                        {index === 1 && (
-                          <Trophy className="h-5 w-5 text-gray-400" />
-                        )}
-                        {index === 2 && (
-                          <Trophy className="h-5 w-5 text-amber-600" />
-                        )}
-                        {index > 2 && (
-                          <span className="text-sm md:text-base text-muted-foreground">
-                            {index + 1 + (page - 1) * USERS_PER_PAGE}
+                <>
+                  <div className="divide-y">
+                    {users.map((user, index) => {
+                      const globalIndex =
+                        (currentPage - 1) * USERS_PER_PAGE + index;
+                      return (
+                        <div
+                          key={user.id}
+                          className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="w-8 text-center">
+                            {globalIndex <= 2 ? (
+                              getTrophyIcon(globalIndex)
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                {globalIndex + 1}
+                              </span>
+                            )}
+                          </div>
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {user.username?.[0]?.toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="flex-1 font-medium">
+                            {user.username}
                           </span>
-                        )}
-                      </div>
-                      <Avatar className="h-8 w-8 md:h-10 md:w-10">
-                        <AvatarImage src={user.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {user.username?.[0]?.toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm md:text-base truncate">
-                          {user.username}
+                          <span className="text-muted-foreground">
+                            {leaderboardType === "problems"
+                              ? `${user.total_problems} solved`
+                              : `${user.current_streak} days`}
+                          </span>
                         </div>
-                        {user.bio && (
-                          <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
-                            {user.bio}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-sm md:text-base text-muted-foreground shrink-0">
-                        {leaderboardType === "problems"
-                          ? `${user.problems?.[0]?.count || 0} solved`
-                          : `${user.current_streak || 0} days`}
-                      </div>
-                    </Link>
-                  ))}
-                  {users.length === 0 && (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground">
-                      No users found
-                    </div>
-                  )}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
 
-              {/* Pagination */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 border-t">
-                <p className="text-sm text-muted-foreground order-2 md:order-1 text-center md:text-left">
-                  Showing {(page - 1) * USERS_PER_PAGE + 1} to{" "}
-                  {Math.min(page * USERS_PER_PAGE, totalUsers)} of {totalUsers}{" "}
-                  users
-                </p>
-                <div className="flex justify-center gap-2 order-1 md:order-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="h-8 md:h-9"
-                  >
-                    <ChevronLeft className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Previous</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="h-8 md:h-9"
-                  >
-                    <span className="hidden md:inline">Next</span>
-                    <ChevronRight className="h-4 w-4 md:ml-1" />
-                  </Button>
-                </div>
-              </div>
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between p-4 border-t">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {(currentPage - 1) * USERS_PER_PAGE + 1} to{" "}
+                      {Math.min(currentPage * USERS_PER_PAGE, totalUsers)} of{" "}
+                      {totalUsers} users
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -20,7 +20,7 @@ type LeaderboardUser = {
   id: string;
   username: string;
   avatar_url: string | null;
-  problems: { count: number }[];
+  total_problems: number;
   current_streak: number;
 };
 
@@ -41,41 +41,55 @@ export function LeaderboardCard() {
       setLoading(true);
 
       if (leaderboardType === "problems") {
-        const { data, error } = await supabase
+        // First get all users with usernames
+        const { data: profiles, error: profileError } = await supabase
           .from("profiles")
-          .select(
-            `
-            id,
-            username,
-            avatar_url,
-            problems:problems(count),
-            current_streak
-          `
-          )
-          .not("username", "is", null)
-          .order("problems", { ascending: false })
-          .limit(5);
+          .select("id, username, avatar_url, current_streak")
+          .not("username", "is", null);
 
-        if (error) throw error;
-        setUsers(data || []);
+        if (profileError) throw profileError;
+
+        // Then get problem counts for each user
+        const userProblems = await Promise.all(
+          profiles.map(async (profile) => {
+            const { data, error } = await supabase
+              .from("problems")
+              .select("number", { count: "exact", head: false })
+              .eq("user_id", profile.id)
+              .limit(1000);
+
+            if (error) throw error;
+
+            return {
+              ...profile,
+              total_problems: data?.length || 0,
+            };
+          })
+        );
+
+        // Sort by total problems and get top 3
+        const sortedUsers = userProblems
+          .sort((a, b) => b.total_problems - a.total_problems)
+          .slice(0, 3);
+
+        setUsers(sortedUsers);
       } else {
-        const { data, error } = await supabase
+        // Get users sorted by streak
+        const { data: usersByStreak, error: streakError } = await supabase
           .from("profiles")
-          .select(
-            `
-            id,
-            username,
-            avatar_url,
-            problems:problems(count),
-            current_streak
-          `
-          )
+          .select("id, username, avatar_url, current_streak")
           .not("username", "is", null)
           .order("current_streak", { ascending: false })
-          .limit(5);
+          .limit(3); // Changed to 3
 
-        if (error) throw error;
-        setUsers(data || []);
+        if (streakError) throw streakError;
+
+        setUsers(
+          usersByStreak?.map((user) => ({
+            ...user,
+            total_problems: 0,
+          })) || []
+        );
       }
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
@@ -84,8 +98,21 @@ export function LeaderboardCard() {
     }
   }
 
+  const getTrophyIcon = (index: number) => {
+    switch (index) {
+      case 0:
+        return <Trophy className="h-5 w-5 text-yellow-500" />;
+      case 1:
+        return <Trophy className="h-5 w-5 text-gray-400" />;
+      case 2:
+        return <Trophy className="h-5 w-5 text-amber-600" />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <Card className="h-[400px]">
+    <Card>
       <CardHeader className="pb-4">
         <div className="flex flex-col space-y-2">
           <CardTitle>Leaderboard</CardTitle>
@@ -113,42 +140,39 @@ export function LeaderboardCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {loading ? (
-            Array(5)
+            Array(3)
               .fill(0)
-              .map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-2">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-4 w-[100px]" />
-                  <Skeleton className="h-4 w-[50px] ml-auto" />
-                </div>
-              ))
+              .map(
+                (
+                  _,
+                  i // Changed to 3
+                ) => (
+                  <div key={i} className="flex items-center gap-4 p-2">
+                    <Skeleton className="h-5 w-5" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <Skeleton className="h-4 w-[100px]" />
+                    <Skeleton className="h-4 w-[50px] ml-auto" />
+                  </div>
+                )
+              )
           ) : users.length === 0 ? (
             <div className="flex items-center justify-center h-[200px] text-muted-foreground">
               No users found
             </div>
           ) : (
             users.map((user, index) => (
-              <Link
+              <div
                 key={user.id}
-                href={`/users/${user.id}`}
                 className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted transition-colors"
               >
                 <div className="flex items-center justify-center w-6">
-                  {index === 0 && (
-                    <Trophy className="h-4 w-4 text-yellow-500" />
-                  )}
-                  {index === 1 && <Trophy className="h-4 w-4 text-gray-400" />}
-                  {index === 2 && <Trophy className="h-4 w-4 text-amber-600" />}
-                  {index > 2 && (
-                    <span className="text-sm text-muted-foreground">
-                      {index + 1}
-                    </span>
-                  )}
+                  {getTrophyIcon(index)}
                 </div>
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-10 w-10">
+                  {" "}
+                  {/* Slightly larger avatars */}
                   <AvatarImage src={user.avatar_url || undefined} />
                   <AvatarFallback>
                     {user.username?.[0]?.toUpperCase() || "?"}
@@ -159,10 +183,10 @@ export function LeaderboardCard() {
                 </span>
                 <span className="text-sm text-muted-foreground">
                   {leaderboardType === "problems"
-                    ? `${user.problems?.[0]?.count || 0} solved`
-                    : `${user.current_streak || 0} days`}
+                    ? `${user.total_problems} solved`
+                    : `${user.current_streak} days`}
                 </span>
-              </Link>
+              </div>
             ))
           )}
         </div>
