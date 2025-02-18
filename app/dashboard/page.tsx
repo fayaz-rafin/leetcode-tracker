@@ -18,6 +18,7 @@ import RecentProblems from "@/components/recent-problems";
 import { Navbar } from "@/components/navbar";
 import { ContributionGraph } from "@/components/contribution-graph";
 import { calculateProblemStats, type ProblemStats } from "@/lib/problem-stats";
+import { LeaderboardCard } from "@/components/leaderboard-card";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -70,190 +71,186 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-            <div className="flex flex-col gap-4 md:gap-8">
-              {/* Stats Cards */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Solved
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {stats?.totalSolved || 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      +{stats?.solvedThisWeek || 0} this week
-                    </p>
-                  </CardContent>
-                </Card>
+      <main className="flex-1 p-4 md:p-6">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Current Streak
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {stats?.currentStreak || 0} days
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {stats?.streakMessage || "Start your streak today!"}
-                    </p>
-                  </CardContent>
-                </Card>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total Solved */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total Solved
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats?.totalSolved || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  +{stats?.solvedThisWeek || 0} this week
+                </p>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Completion Rate
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {Math.round(((stats?.totalSolved || 0) / 2500) * 100)}%
-                    </div>
-                    <Progress
-                      value={((stats?.totalSolved || 0) / 2500) * 100}
-                      className="mt-2"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Of total LeetCode problems
-                    </p>
-                  </CardContent>
-                </Card>
+            {/* Current Streak */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Current Streak
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats?.currentStreak || 0} days
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {stats?.streakMessage || "Start your streak today!"}
+                </p>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Average Per Day
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {stats?.totalSolved
-                        ? (stats.solvedThisWeek / 7).toFixed(1)
-                        : "0"}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Problems per day this week
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+            {/* Completion Rate */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Completion Rate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {Math.round(((stats?.totalSolved || 0) / 2500) * 100)}%
+                </div>
+                <Progress
+                  value={((stats?.totalSolved || 0) / 2500) * 100}
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Of total LeetCode problems
+                </p>
+              </CardContent>
+            </Card>
 
-              {/* Contribution Graph */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Leetcode Activity</CardTitle>
-                  <CardDescription>
-                    Your problem-solving activity over time
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ContributionGraph />
-                </CardContent>
-              </Card>
-
-              {/* Recent Problems and Add Problem Form */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card className="col-span-2 md:col-span-1">
-                  <CardHeader>
-                    <CardTitle>Recent Problems</CardTitle>
-                    <CardDescription>
-                      Your recently solved LeetCode problems
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RecentProblems onProblemAdded={loadStats} />
-                  </CardContent>
-                </Card>
-
-                <Card className="col-span-2 md:col-span-1">
-                  <CardHeader>
-                    <CardTitle>Add New Problem</CardTitle>
-                    <CardDescription>
-                      Record your latest conquest
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <AddProblemForm onProblemAdded={loadStats} />
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Difficulty Distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Problem Distribution</CardTitle>
-                  <CardDescription>
-                    Breakdown by difficulty level
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-green-600 font-medium">Easy</span>
-                        <span>{stats?.easyCount || 0} problems</span>
-                      </div>
-                      <Progress
-                        value={
-                          ((stats?.easyCount || 0) /
-                            (stats?.totalSolved || 1)) *
-                          100
-                        }
-                        className="bg-green-100 h-2"
-                      >
-                        <div className="bg-green-500 h-2 rounded-full" />
-                      </Progress>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-yellow-600 font-medium">
-                          Medium
-                        </span>
-                        <span>{stats?.mediumCount || 0} problems</span>
-                      </div>
-                      <Progress
-                        value={
-                          ((stats?.mediumCount || 0) /
-                            (stats?.totalSolved || 1)) *
-                          100
-                        }
-                        className="bg-yellow-100 h-2"
-                      >
-                        <div className="bg-yellow-500 h-2 rounded-full" />
-                      </Progress>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-red-600 font-medium">Hard</span>
-                        <span>{stats?.hardCount || 0} problems</span>
-                      </div>
-                      <Progress
-                        value={
-                          ((stats?.hardCount || 0) /
-                            (stats?.totalSolved || 1)) *
-                          100
-                        }
-                        className="bg-red-100 h-2"
-                      >
-                        <div className="bg-red-500 h-2 rounded-full" />
-                      </Progress>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Average Per Day */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Average Per Day
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats?.totalSolved
+                    ? (stats.solvedThisWeek / 7).toFixed(1)
+                    : "0"}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Problems per day this week
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </section>
+
+          {/* Activity and Leaderboard */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contribution Activity</CardTitle>
+                <CardDescription>
+                  Your problem-solving activity over time
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ContributionGraph />
+              </CardContent>
+            </Card>
+
+            <LeaderboardCard />
+          </div>
+
+          {/* Recent Problems and Add Form */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Problems</CardTitle>
+                <CardDescription>
+                  Your recently solved LeetCode problems
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RecentProblems onProblemAdded={loadStats} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Problem</CardTitle>
+                <CardDescription>Record your latest conquest</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AddProblemForm onProblemAdded={loadStats} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Problem Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Problem Distribution</CardTitle>
+              <CardDescription>Breakdown by difficulty level</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-600 font-medium">Easy</span>
+                    <span>{stats?.easyCount || 0} problems</span>
+                  </div>
+                  <Progress
+                    value={
+                      ((stats?.easyCount || 0) / (stats?.totalSolved || 1)) *
+                      100
+                    }
+                    className="bg-green-100 h-2"
+                  >
+                    <div className="bg-green-500 h-2 rounded-full" />
+                  </Progress>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-yellow-600 font-medium">Medium</span>
+                    <span>{stats?.mediumCount || 0} problems</span>
+                  </div>
+                  <Progress
+                    value={
+                      ((stats?.mediumCount || 0) / (stats?.totalSolved || 1)) *
+                      100
+                    }
+                    className="bg-yellow-100 h-2"
+                  >
+                    <div className="bg-yellow-500 h-2 rounded-full" />
+                  </Progress>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-red-600 font-medium">Hard</span>
+                    <span>{stats?.hardCount || 0} problems</span>
+                  </div>
+                  <Progress
+                    value={
+                      ((stats?.hardCount || 0) / (stats?.totalSolved || 1)) *
+                      100
+                    }
+                    className="bg-red-100 h-2"
+                  >
+                    <div className="bg-red-500 h-2 rounded-full" />
+                  </Progress>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
       <Toaster />
     </div>

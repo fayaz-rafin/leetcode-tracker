@@ -1,4 +1,3 @@
-// components/all-problems-table.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -42,9 +41,20 @@ export default function AllProblemsTable() {
 
   const fetchProblems = async () => {
     try {
+      // Get current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Not authenticated");
+      }
+
       let query = supabase
         .from("problems")
         .select("*")
+        .eq("user_id", user.id)
         .order("date_solved", { ascending: false });
 
       // Apply filters
@@ -61,8 +71,7 @@ export default function AllProblemsTable() {
       const { data, error } = await query;
 
       if (error) throw error;
-
-      setProblems(data);
+      setProblems(data || []);
     } catch (error) {
       console.error("Error fetching problems:", error);
     } finally {
@@ -74,14 +83,10 @@ export default function AllProblemsTable() {
     fetchProblems();
   }, [filters]);
 
-  if (loading) {
-    return <div>Loading problems...</div>;
-  }
-
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           <Input
             placeholder="Filter by problem number"
@@ -101,7 +106,7 @@ export default function AllProblemsTable() {
             }
           />
         </div>
-        <div className="w-[200px]">
+        <div className="w-full md:w-[200px]">
           <Select
             value={filters.difficulty}
             onValueChange={(value) =>
@@ -122,42 +127,61 @@ export default function AllProblemsTable() {
       </div>
 
       {/* Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Number</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Difficulty</TableHead>
-            <TableHead>Times Solved</TableHead>
-            <TableHead>Last Solved</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {problems.map((problem) => (
-            <TableRow key={problem.id}>
-              <TableCell>{problem.number}</TableCell>
-              <TableCell>{problem.name}</TableCell>
-              <TableCell>
-                <Badge
-                  variant={
-                    problem.difficulty === "Easy"
-                      ? "secondary"
-                      : problem.difficulty === "Medium"
-                      ? "default"
-                      : "destructive"
-                  }
-                >
-                  {problem.difficulty}
-                </Badge>
-              </TableCell>
-              <TableCell>{problem.times_solved}</TableCell>
-              <TableCell>
-                {new Date(problem.date_solved).toLocaleDateString()}
-              </TableCell>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Number</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Difficulty</TableHead>
+              <TableHead>Times Solved</TableHead>
+              <TableHead>Last Solved</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8">
+                  Loading problems...
+                </TableCell>
+              </TableRow>
+            ) : problems.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-8 text-muted-foreground"
+                >
+                  No problems found
+                </TableCell>
+              </TableRow>
+            ) : (
+              problems.map((problem) => (
+                <TableRow key={problem.id}>
+                  <TableCell>{problem.number}</TableCell>
+                  <TableCell>{problem.name}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        problem.difficulty === "Easy"
+                          ? "secondary"
+                          : problem.difficulty === "Medium"
+                          ? "default"
+                          : "destructive"
+                      }
+                    >
+                      {problem.difficulty}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{problem.times_solved}</TableCell>
+                  <TableCell>
+                    {new Date(problem.date_solved).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
