@@ -18,6 +18,7 @@ import RecentProblems from "@/components/recent-problems";
 import { Navbar } from "@/components/navbar";
 import { ContributionGraph } from "@/components/contribution-graph";
 import { calculateProblemStats, type ProblemStats } from "@/lib/problem-stats";
+import { LeaderboardCard } from "@/components/leaderboard-card";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -145,6 +146,10 @@ export default function Dashboard() {
                       Problems per day this week
                     </p>
                   </CardContent>
+                </Card>
+
+                <Card className="col-span-2 md:col-span-1">
+                  <LeaderboardCard />
                 </Card>
               </div>
 

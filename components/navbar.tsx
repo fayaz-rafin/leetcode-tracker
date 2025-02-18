@@ -47,6 +47,7 @@ export function Navbar() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/all-problems", label: "All Problems" },
+    { href: "/leaderboard", label: "Leaderboard" },
     { href: "/profile", label: "Profile" },
   ];
 

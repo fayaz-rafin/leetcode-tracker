@@ -1,3 +1,4 @@
+// components/recent-problems.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,16 +20,28 @@ interface RecentProblemsProps {
 
 export default function RecentProblems({
   onProblemAdded,
-}: Readonly<RecentProblemsProps>) {
+}: RecentProblemsProps) {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
 
   const fetchProblems = async () => {
     try {
+      // First get the current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Not authenticated");
+      }
+
+      // Then fetch only their problems
       const { data, error } = await supabase
         .from("problems")
         .select("*")
+        .eq("user_id", user.id) // Add this filter for current user
         .order("date_solved", { ascending: false })
         .limit(5);
 
@@ -47,27 +60,32 @@ export default function RecentProblems({
   }, []);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("problems_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "problems",
-        },
-        () => {
-          fetchProblems();
-          if (onProblemAdded) {
-            onProblemAdded();
+    const fetchChannel = async () => {
+      const channel = supabase
+        .channel("problems_changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "problems",
+            filter: `user_id=eq.${(await supabase.auth.getUser()).data.user?.id}`, // Add filter for real-time updates
+          },
+          () => {
+            fetchProblems();
+            if (onProblemAdded) {
+              onProblemAdded();
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
+
+    fetchChannel();
   }, [supabase, onProblemAdded]);
 
   if (loading) {
