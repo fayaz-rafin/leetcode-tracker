@@ -47,7 +47,7 @@ export function Navbar() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/all-problems", label: "All Problems" },
-    { href: "#", label: "Statistics" },
+    { href: "/profile", label: "Profile" },
   ];
 
   return (
