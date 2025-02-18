@@ -23,7 +23,8 @@ export async function middleware(req: NextRequest) {
   // Protected routes - only accessible to authenticated users
   if (!user && (
     req.nextUrl.pathname.startsWith('/dashboard') ||
-    req.nextUrl.pathname.startsWith('/all-problems')
+    req.nextUrl.pathname.startsWith('/all-problems') ||
+    req.nextUrl.pathname.startsWith('/profile')
   )) {
     return NextResponse.redirect(new URL('/auth/login', req.url))
   }
@@ -35,6 +36,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/all-problems/:path*',
+    '/profile/:path*',
     '/auth/:path*'
   ]
 }

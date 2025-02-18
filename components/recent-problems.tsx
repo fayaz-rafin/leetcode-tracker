@@ -19,7 +19,7 @@ interface RecentProblemsProps {
 
 export default function RecentProblems({
   onProblemAdded,
-}: RecentProblemsProps) {
+}: Readonly<RecentProblemsProps>) {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
