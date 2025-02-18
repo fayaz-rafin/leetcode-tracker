@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Trophy, Flame, Hash } from "lucide-react";
 import {
@@ -80,7 +79,7 @@ export function LeaderboardCard() {
           .select("id, username, avatar_url, current_streak")
           .not("username", "is", null)
           .order("current_streak", { ascending: false })
-          .limit(3); // Changed to 3
+          .limit(3);
 
         if (streakError) throw streakError;
 
@@ -114,10 +113,12 @@ export function LeaderboardCard() {
   return (
     <Card>
       <CardHeader className="pb-4">
-        <div className="flex flex-col space-y-2">
-          <CardTitle>Leaderboard</CardTitle>
-          <CardDescription>Top performers in the community</CardDescription>
-          <div className="flex gap-2 pt-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div>
+            <CardTitle>Leaderboard</CardTitle>
+            <CardDescription>Top performers in the community</CardDescription>
+          </div>
+          <div className="flex gap-2">
             <Button
               variant={leaderboardType === "problems" ? "default" : "outline"}
               size="sm"
@@ -144,19 +145,14 @@ export function LeaderboardCard() {
           {loading ? (
             Array(3)
               .fill(0)
-              .map(
-                (
-                  _,
-                  i // Changed to 3
-                ) => (
-                  <div key={i} className="flex items-center gap-4 p-2">
-                    <Skeleton className="h-5 w-5" />
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <Skeleton className="h-4 w-[100px]" />
-                    <Skeleton className="h-4 w-[50px] ml-auto" />
-                  </div>
-                )
-              )
+              .map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-2">
+                  <Skeleton className="h-5 w-5" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-4 w-[100px]" />
+                  <Skeleton className="h-4 w-[50px] ml-auto" />
+                </div>
+              ))
           ) : users.length === 0 ? (
             <div className="flex items-center justify-center h-[200px] text-muted-foreground">
               No users found
@@ -171,8 +167,6 @@ export function LeaderboardCard() {
                   {getTrophyIcon(index)}
                 </div>
                 <Avatar className="h-10 w-10">
-                  {" "}
-                  {/* Slightly larger avatars */}
                   <AvatarImage src={user.avatar_url || undefined} />
                   <AvatarFallback>
                     {user.username?.[0]?.toUpperCase() || "?"}
