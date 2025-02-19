@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Trophy, Flame, Hash, ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -14,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/navbar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type LeaderboardUser = {
   id: string;
@@ -26,6 +28,7 @@ type LeaderboardUser = {
 const USERS_PER_PAGE = 20;
 
 export default function LeaderboardPage() {
+  const router = useRouter();
   const [leaderboardType, setLeaderboardType] = useState<"problems" | "streak">(
     "problems"
   );
@@ -116,6 +119,10 @@ export default function LeaderboardPage() {
     }
   }
 
+  const handleUserClick = (username: string) => {
+    router.push(`/users/${username}`);
+  };
+
   const totalPages = Math.ceil(totalUsers / USERS_PER_PAGE);
 
   const getTrophyIcon = (index: number) => {
@@ -178,10 +185,10 @@ export default function LeaderboardPage() {
                         key={i}
                         className="flex items-center gap-4 p-2 animate-pulse"
                       >
-                        <div className="w-8 h-4 bg-gray-200 rounded" />
-                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                        <div className="flex-1 h-4 bg-gray-200 rounded" />
-                        <div className="w-20 h-4 bg-gray-200 rounded" />
+                        <Skeleton className="w-8 h-4" />
+                        <Skeleton className="w-10 h-10 rounded-full" />
+                        <Skeleton className="flex-1 h-4" />
+                        <Skeleton className="w-20 h-4" />
                       </div>
                     ))}
                 </div>
@@ -194,7 +201,14 @@ export default function LeaderboardPage() {
                       return (
                         <div
                           key={user.id}
-                          className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => handleUserClick(user.username)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              handleUserClick(user.username);
+                          }}
                         >
                           <div className="w-8 text-center">
                             {globalIndex <= 2 ? (
@@ -265,3 +279,7 @@ export default function LeaderboardPage() {
     </div>
   );
 }
+const handleUserClick = (username: string) => {
+  console.log("Navigating to user:", username); // Debug log
+  router.push(`/users/${username}`);
+};

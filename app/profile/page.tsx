@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/navbar";
 
@@ -73,7 +74,6 @@ export default function ProfilePage() {
         .single();
 
       if (error && error.code === "PGRST116") {
-        // Profile doesn't exist yet, create it
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
           .insert({ id: user.id })
@@ -128,7 +128,6 @@ export default function ProfilePage() {
         throw new Error("Not authenticated");
       }
 
-      // Check if username exists
       const { data: existingUser, error: checkError } = await supabase
         .from("profiles")
         .select("username")
@@ -229,19 +228,16 @@ export default function ProfilePage() {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
 
-      // Upload the file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // Get the public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
-      // Update the profile with the new avatar URL
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: publicUrl })
@@ -276,67 +272,55 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 py-12">
-        <div className="container px-4 md:px-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Profile Info Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Your public profile information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Avatar Section */}
-                <div className="space-y-4">
-                  <Label>Profile Picture</Label>
-                  <div className="flex items-center gap-4">
-                    <div className="relative h-24 w-24 rounded-full overflow-hidden border">
-                      {profile?.avatar_url ? (
-                        <Image
-                          src={profile.avatar_url}
-                          alt="Avatar"
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-muted flex items-center justify-center">
-                          <span className="text-3xl">
-                            {profile?.username?.[0]?.toUpperCase() || "?"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <Label htmlFor="avatar" className="cursor-pointer">
-                        <div className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          <span>
-                            {uploading ? "Uploading..." : "Upload new avatar"}
-                          </span>
-                        </div>
-                        <Input
-                          id="avatar"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleAvatarChange}
-                          disabled={uploading}
-                        />
-                      </Label>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Recommended: Square image, 500x500px or larger
-                      </p>
-                    </div>
+      <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Profile Information Card */}
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>Profile Information</CardTitle>
+              <CardDescription>Your public profile information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Avatar Section */}
+              <div className="space-y-4">
+                <Label>Profile Picture</Label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {profile?.username?.[0]?.toUpperCase() || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="avatar" className="cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        <span>
+                          {uploading ? "Uploading..." : "Upload new avatar"}
+                        </span>
+                      </div>
+                      <Input
+                        id="avatar"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                        disabled={uploading}
+                      />
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Recommended: Square image, 500x500px or larger
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Username Section */}
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+              {/* Username Section */}
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <form onSubmit={handleUsernameSubmit} className="space-y-2">
                   <Input
                     id="username"
                     placeholder="Enter username"
@@ -345,51 +329,48 @@ export default function ProfilePage() {
                     disabled={profile?.username !== null}
                   />
                   {profile?.username === null && (
-                    <p className="text-sm text-muted-foreground">
-                      Choose your username carefully - it cannot be changed
-                      later
-                    </p>
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Choose your username carefully - it cannot be changed
+                        later
+                      </p>
+                      <Button type="submit" disabled={!username.trim()}>
+                        Set Username
+                      </Button>
+                    </>
                   )}
-                  {profile?.username === null && (
-                    <Button
-                      onClick={handleUsernameSubmit}
-                      disabled={loading}
-                      className="mt-2"
-                    >
-                      {loading ? "Saving..." : "Set Username"}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                </form>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Bio & Social Links Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Bio & Social Links</CardTitle>
-                <CardDescription>Tell others about yourself</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleProfileUpdate} className="space-y-6">
-                  {/* Bio Section */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      placeholder="Tell us about yourself..."
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      maxLength={300}
-                      className="resize-none"
-                      rows={4}
-                    />
-                    <p className="text-sm text-muted-foreground text-right">
-                      {bio.length}/300 characters
-                    </p>
+          {/* Bio & Social Links Card */}
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>Bio & Social Links</CardTitle>
+              <CardDescription>Tell others about yourself</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleProfileUpdate} className="space-y-6">
+                {/* Bio Section */}
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    placeholder="Tell us about yourself..."
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    maxLength={300}
+                    className="resize-none h-32"
+                  />
+                  <div className="text-sm text-muted-foreground text-right">
+                    {bio.length}/300 characters
                   </div>
+                </div>
 
-                  {/* Social Links */}
-                  <div className="space-y-4">
+                {/* Social Links */}
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-1">
                     <div className="space-y-2">
                       <Label
                         htmlFor="leetcode"
@@ -438,55 +419,55 @@ export default function ProfilePage() {
                       />
                     </div>
                   </div>
+                </div>
 
-                  <Button type="submit" className="w-full" disabled={saving}>
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                </form>
+                <Button type="submit" className="w-full" disabled={saving}>
+                  {saving ? "Saving Changes..." : "Save Changes"}
+                </Button>
+              </form>
 
-                {/* Social Links Preview */}
-                {(leetcodeHandle || githubHandle || linkedinUrl) && (
-                  <div className="mt-6 pt-6 border-t">
-                    <h3 className="text-sm font-medium mb-4">
-                      Your Social Links
-                    </h3>
-                    <div className="flex gap-4">
-                      {leetcodeHandle && (
-                        <a
-                          href={`https://leetcode.com/${leetcodeHandle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary"
-                        >
-                          <Code2 className="h-5 w-5" />
-                        </a>
-                      )}
-                      {githubHandle && (
-                        <a
-                          href={`https://github.com/${githubHandle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary"
-                        >
-                          <Github className="h-5 w-5" />
-                        </a>
-                      )}
-                      {linkedinUrl && (
-                        <a
-                          href={linkedinUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary"
-                        >
-                          <Linkedin className="h-5 w-5" />
-                        </a>
-                      )}
-                    </div>
+              {/* Social Links Preview */}
+              {(leetcodeHandle || githubHandle || linkedinUrl) && (
+                <div className="mt-6 pt-6 border-t">
+                  <h3 className="text-sm font-medium mb-4">
+                    Your Social Links
+                  </h3>
+                  <div className="flex gap-4">
+                    {leetcodeHandle && (
+                      <a
+                        href={`https://leetcode.com/${leetcodeHandle}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Code2 className="h-5 w-5" />
+                      </a>
+                    )}
+                    {githubHandle && (
+                      <a
+                        href={`https://github.com/${githubHandle}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Github className="h-5 w-5" />
+                      </a>
+                    )}
+                    {linkedinUrl && (
+                      <a
+                        href={linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Linkedin className="h-5 w-5" />
+                      </a>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
