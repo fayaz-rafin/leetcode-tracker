@@ -24,7 +24,8 @@ export async function middleware(req: NextRequest) {
   if (!user && (
     req.nextUrl.pathname.startsWith('/dashboard') ||
     req.nextUrl.pathname.startsWith('/all-problems') ||
-    req.nextUrl.pathname.startsWith('/profile')
+    req.nextUrl.pathname.startsWith('/profile') ||
+    req.nextUrl.pathname.startsWith('/leaderboard')
   )) {
     return NextResponse.redirect(new URL('/auth/login', req.url))
   }
@@ -37,6 +38,7 @@ export const config = {
     '/dashboard/:path*',
     '/all-problems/:path*',
     '/profile/:path*',
-    '/auth/:path*'
+    '/auth/:path*',
+    '/leaderboard/:path*',
   ]
 }
