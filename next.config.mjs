@@ -11,9 +11,6 @@ const nextConfig = {
     ],
     domains: ['asrhihbjxbjxugoudxwe.supabase.co'],
   },
-  experimental: {
-    appDir: true,
-  },
 };
 
 export default nextConfig;

@@ -29,8 +29,16 @@ import {
   Code2,
   Github,
   Linkedin,
+  Users,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface UserProfile {
   id: string;
@@ -51,6 +59,69 @@ interface Problem {
   difficulty: string;
 }
 
+interface FollowStats {
+  followers: number;
+  following: number;
+}
+
+interface FollowUser {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+function FollowList({
+  users,
+  title,
+  onUserClick,
+  isLoading = false,
+}: {
+  users: FollowUser[];
+  title: string;
+  onUserClick: (username: string) => void;
+  isLoading?: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h3 className="font-semibold">{title}</h3>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-semibold">{title}</h3>
+      {users.length > 0 ? (
+        <div className="space-y-2">
+          {users.map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded-lg cursor-pointer"
+              onClick={() => onUserClick(user.username)}
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.avatar_url || undefined} />
+                <AvatarFallback>
+                  {user.username[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium">{user.username}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-muted-foreground py-8">
+          No users found
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function UserProfilePage() {
   const router = useRouter();
   const params = useParams();
@@ -59,15 +130,26 @@ export default function UserProfilePage() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followStats, setFollowStats] = useState<FollowStats>({ followers: 0, following: 0 });
+  const [followers, setFollowers] = useState<FollowUser[]>([]);
+  const [following, setFollowing] = useState<FollowUser[]>([]);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [loadingFollowers, setLoadingFollowers] = useState(false);
+  const [loadingFollowing, setLoadingFollowing] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     if (!username) return;
-
-    async function fetchUserProfile() {
+    
+    async function fetchData() {
       try {
         setLoading(true);
         setError(null);
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUser(user?.id || null);
 
         // Fetch user profile
         const { data: profileData, error: profileError } = await supabase
@@ -88,6 +170,8 @@ export default function UserProfilePage() {
           return;
         }
 
+        setProfile(profileData);
+
         // Fetch user's problems
         const { data: problemsData, error: problemsError } = await supabase
           .from("problems")
@@ -100,18 +184,150 @@ export default function UserProfilePage() {
           return;
         }
 
-        setProfile(profileData);
         setProblems(problemsData || []);
+
+        // Check follow status
+        if (user) {
+          const { data: followData } = await supabase
+            .from('follows')
+            .select('*')
+            .eq('follower_id', user.id)
+            .eq('following_id', profileData.id)
+            .single();
+
+          setIsFollowing(!!followData);
+        }
+
+        // Fetch follow stats
+        const { data: followersData } = await supabase
+          .from('follows')
+          .select('follower_id')
+          .eq('following_id', profileData.id);
+
+        const { data: followingData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', profileData.id);
+
+        setFollowStats({
+          followers: followersData?.length || 0,
+          following: followingData?.length || 0,
+        });
+
       } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("Error fetching data:", error);
         setError("An error occurred while loading the profile");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchUserProfile();
+    fetchData();
   }, [username, supabase]);
+
+  async function fetchFollowers() {
+    try {
+      setLoadingFollowers(true);
+      // First get the follower IDs
+      const { data: followData, error: followError } = await supabase
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', profile?.id);
+
+      if (followError) {
+        console.error('Error fetching followers:', followError);
+        return;
+      }
+
+      if (!followData?.length) {
+        setFollowers([]);
+        return;
+      }
+
+      // Then get the profile information for those followers
+      const followerIds = followData.map(f => f.follower_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', followerIds);
+
+      if (profilesError) {
+        console.error('Error fetching follower profiles:', profilesError);
+        return;
+      }
+
+      setFollowers(profilesData || []);
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+    } finally {
+      setLoadingFollowers(false);
+    }
+  }
+
+  async function fetchFollowing() {
+    try {
+      setLoadingFollowing(true);
+      // First get the following IDs
+      const { data: followData, error: followError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', profile?.id);
+
+      if (followError) {
+        console.error('Error fetching following:', followError);
+        return;
+      }
+
+      if (!followData?.length) {
+        setFollowing([]);
+        return;
+      }
+
+      // Then get the profile information for those being followed
+      const followingIds = followData.map(f => f.following_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', followingIds);
+
+      if (profilesError) {
+        console.error('Error fetching following profiles:', profilesError);
+        return;
+      }
+
+      setFollowing(profilesData || []);
+    } catch (error) {
+      console.error('Error fetching following:', error);
+    } finally {
+      setLoadingFollowing(false);
+    }
+  }
+
+  async function handleFollow() {
+    try {
+      if (!currentUser || !profile) return;
+
+      if (isFollowing) {
+        await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', currentUser)
+          .eq('following_id', profile.id);
+      } else {
+        await supabase
+          .from('follows')
+          .insert({ follower_id: currentUser, following_id: profile.id });
+      }
+
+      setIsFollowing(!isFollowing);
+      setFollowStats(prev => ({
+        ...prev,
+        followers: isFollowing ? prev.followers - 1 : prev.followers + 1
+      }));
+    } catch (error) {
+      console.error('Error following/unfollowing:', error);
+    }
+  }
 
   if (loading) {
     return (
@@ -126,9 +342,7 @@ export default function UserProfilePage() {
       <div className="flex min-h-screen items-center justify-center">
         <Card className="w-[400px]">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-2">
-              Error Loading Profile
-            </h2>
+            <h2 className="text-xl font-semibold mb-2">Error Loading Profile</h2>
             <p className="text-muted-foreground mb-4">
               {error || "Could not load user profile"}
             </p>
@@ -167,9 +381,72 @@ export default function UserProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold mb-2">
-                    {profile.username}
-                  </h1>
+                  <div className="flex justify-between items-center mb-4">
+                    <h1 className="text-2xl font-bold">{profile.username}</h1>
+                    {currentUser && currentUser !== profile.id && (
+                      <Button
+                        variant={isFollowing ? "outline" : "default"}
+                        onClick={handleFollow}
+                      >
+                        {isFollowing ? "Unfollow" : "Follow"}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-6 mb-4">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="text-sm"
+                          onClick={fetchFollowers}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          {followStats.followers} {followStats.followers === 1 ? 'follower' : 'followers'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Followers</DialogTitle>
+                        </DialogHeader>
+                        <FollowList
+                          users={followers}
+                          title="People following you"
+                          onUserClick={(username) => {
+                            router.push(`/users/${username}`);
+                          }}
+                          isLoading={loadingFollowers}
+                        />
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="text-sm"
+                          onClick={fetchFollowing}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          {followStats.following} following
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Following</DialogTitle>
+                        </DialogHeader>
+                        <FollowList
+                          users={following}
+                          title="People you follow"
+                          onUserClick={(username) => {
+                            router.push(`/users/${username}`);
+                          }}
+                          isLoading={loadingFollowing}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
                   <div className="flex gap-4">
                     {profile.leetcode_handle && (
                       <a
