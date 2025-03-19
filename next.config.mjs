@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    images: {
-      remotePatterns: [
+  output: 'standalone', // Important for Cloudflare deployment
+  images: {
+    remotePatterns: [
       {
         protocol: 'https',
         hostname: '*.supabase.co',
