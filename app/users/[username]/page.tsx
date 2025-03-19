@@ -175,7 +175,7 @@ export default function UserProfilePage() {
         // Fetch user's problems
         const { data: problemsData, error: problemsError } = await supabase
           .from("problems")
-          .select("id, number, name, difficulty")
+          .select("id, user_id, number, name, difficulty")
           .eq("user_id", profileData.id);
 
         if (problemsError) {

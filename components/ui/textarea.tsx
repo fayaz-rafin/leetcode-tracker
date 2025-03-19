@@ -3,8 +3,22 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+// If the cn function is not defined in "@/lib/utils", you can define it here
+// function cn(...classes: string[]) {
+//   return classes.filter(Boolean).join(' ');
+// }
+
+/**
+ * Props for the Textarea component.
+ * 
+ * This interface extends the standard HTML attributes for a textarea element.
+ * 
+ * @extends React.TextareaHTMLAttributes<HTMLTextAreaElement>
+ */
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  customProp?: string;
+}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, ...props }, ref) => {

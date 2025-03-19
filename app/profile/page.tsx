@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   Loader2,
@@ -11,7 +10,7 @@ import {
   Github,
   Linkedin,
   Code2,
-  ExternalLink,
+  
 } from "lucide-react";
 import {
   Card,
@@ -38,6 +37,12 @@ interface Profile {
   linkedin_url: string | null;
 }
 
+// Define a type for errors
+interface SupabaseError {
+  message: string;
+  code?: string;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -51,11 +56,9 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    getProfile();
-  }, []);
-
-  async function getProfile() {
+  // Important: Add this function to make the component properly handle the dependency
+  // Place this right after your state declarations
+  const getProfile = async () => {
     try {
       const {
         data: { user },
@@ -67,7 +70,8 @@ export default function ProfilePage() {
         return;
       }
 
-      let { data: profile, error } = await supabase
+      // Use const instead of let
+      const { data: profileData, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
@@ -81,17 +85,22 @@ export default function ProfilePage() {
           .single();
 
         if (insertError) throw insertError;
-        profile = newProfile;
+        setProfile(newProfile);
+        setUsername(newProfile?.username || "");
+        setBio(newProfile?.bio || "");
+        setLeetcodeHandle(newProfile?.leetcode_handle || "");
+        setGithubHandle(newProfile?.github_handle || "");
+        setLinkedinUrl(newProfile?.linkedin_url || "");
       } else if (error) {
         throw error;
+      } else {
+        setProfile(profileData);
+        setUsername(profileData?.username || "");
+        setBio(profileData?.bio || "");
+        setLeetcodeHandle(profileData?.leetcode_handle || "");
+        setGithubHandle(profileData?.github_handle || "");
+        setLinkedinUrl(profileData?.linkedin_url || "");
       }
-
-      setProfile(profile);
-      setUsername(profile?.username || "");
-      setBio(profile?.bio || "");
-      setLeetcodeHandle(profile?.leetcode_handle || "");
-      setGithubHandle(profile?.github_handle || "");
-      setLinkedinUrl(profile?.linkedin_url || "");
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -102,7 +111,12 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  // Fix useEffect dependency
+  useEffect(() => {
+    getProfile();
+  }, [getProfile]); // Add getProfile to dependency array
 
   async function handleUsernameSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -159,10 +173,10 @@ export default function ProfilePage() {
       });
 
       await getProfile();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as SupabaseError).message,
         variant: "destructive",
       });
     } finally {
@@ -170,6 +184,7 @@ export default function ProfilePage() {
     }
   }
 
+  // Fix the any types in handleProfileUpdate
   async function handleProfileUpdate(e: React.FormEvent) {
     e.preventDefault();
 
@@ -205,10 +220,11 @@ export default function ProfilePage() {
       });
 
       await getProfile();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      // Use unknown instead of SupabaseError directly
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as SupabaseError).message,
         variant: "destructive",
       });
     } finally {
@@ -251,7 +267,8 @@ export default function ProfilePage() {
       });
 
       await getProfile();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      // Changed from error: SupabaseError to error: unknown
       console.error("Upload error:", error);
       toast({
         title: "Error",

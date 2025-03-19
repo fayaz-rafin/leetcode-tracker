@@ -61,7 +61,7 @@ export default function AddProblemForm({
         const existingProblem = existingProblems[0];
 
         // Perform a raw update using SQL
-        const { data, error: updateError } = await supabase.rpc(
+        const { error: updateError } = await supabase.rpc(
           "increment_problem_solved",
           {
             problem_id: existingProblem.id,
@@ -111,11 +111,11 @@ export default function AddProblemForm({
       if (onProblemAdded) {
         onProblemAdded();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: (error instanceof Error) ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
     } finally {

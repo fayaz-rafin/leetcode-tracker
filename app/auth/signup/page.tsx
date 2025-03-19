@@ -2,7 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// Remove router import since it's not being used
+// import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +18,14 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
+// Create an interface for auth errors
+interface AuthError {
+  message: string;
+}
+
 export default function SignUpPage() {
-  const router = useRouter();
+  // Remove unused router
+  // const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,7 +36,8 @@ export default function SignUpPage() {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.auth.signUp({
+      // Destructure only what we need (remove data if unused)
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -48,10 +56,10 @@ export default function SignUpPage() {
       // Show confirmation message instead of redirecting
       setEmail("");
       setPassword("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as AuthError).message,
         variant: "destructive",
       });
     } finally {

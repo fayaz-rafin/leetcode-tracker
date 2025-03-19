@@ -1,15 +1,18 @@
 // lib/problem-stats.ts
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-export type ProblemStats = {
+export interface ProblemStats {
   totalSolved: number;
-  solvedThisWeek: number;
-  currentStreak: number;
-  streakMessage: string;
   easyCount: number;
   mediumCount: number;
   hardCount: number;
-};
+  currentStreak: number;
+  solvedToday: number; // Add this property
+  solvedThisWeek: number;
+  solvedThisMonth: number;
+  streakMessage: string;
+  // Add any other missing properties used in the component
+}
 
 export async function calculateProblemStats(): Promise<ProblemStats> {
   const supabase = createClientComponentClient();
@@ -52,6 +55,8 @@ export async function calculateProblemStats(): Promise<ProblemStats> {
         easyCount: 0,
         mediumCount: 0,
         hardCount: 0,
+        solvedToday: 0,
+        solvedThisMonth: 0,
       };
     }
 
@@ -81,6 +86,8 @@ export async function calculateProblemStats(): Promise<ProblemStats> {
       easyCount,
       mediumCount,
       hardCount,
+      solvedToday: 0, // Placeholder value
+      solvedThisMonth: 0, // Placeholder value
     };
   } catch (error) {
     console.error("Error calculating stats:", error);

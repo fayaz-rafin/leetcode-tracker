@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  auth_id       String    @unique  // Supabase auth ID
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  problems      Problem[]
+}
+
+model Problem {
+  id          String    @id @default(cuid())
+  number      Int
+  name        String
+  difficulty  String
+  dateSolved  DateTime  @default(now())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+}

@@ -8,9 +8,6 @@ import { Trophy, Flame, Hash, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -38,10 +35,7 @@ export default function LeaderboardPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [leaderboardType, currentPage]);
-
+  // Define fetchLeaderboard function
   async function fetchLeaderboard() {
     try {
       setLoading(true);
@@ -119,7 +113,13 @@ export default function LeaderboardPage() {
     }
   }
 
+  // Fix useEffect dependency
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [leaderboardType, currentPage, fetchLeaderboard]);
+
   const handleUserClick = (username: string) => {
+    console.log("Navigating to user:", username); // Debug log
     router.push(`/users/${username}`);
   };
 
@@ -279,7 +279,3 @@ export default function LeaderboardPage() {
     </div>
   );
 }
-const handleUserClick = (username: string) => {
-  console.log("Navigating to user:", username); // Debug log
-  router.push(`/users/${username}`);
-};

@@ -54,7 +54,7 @@ export default function HomePage() {
                 <CheckCircle className="h-12 w-12 mb-4 text-green-500" />
                 <h3 className="text-xl font-bold mb-2">Problem Tracking</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Keep a record of all the LeetCode problems you've solved.
+                  Keep a record of all the LeetCode problems youve solved.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center">
@@ -70,6 +70,19 @@ export default function HomePage() {
                 <p className="text-gray-500 dark:text-gray-400">Sort and filter problems by difficulty level.</p>
               </div>
             </div>
+          </div>
+        </section>
+        <section id="about" className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8">
+              About LeetCode Tracker
+            </h2>
+            <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400 text-center">
+              LeetCode Tracker is designed to help software engineers and coding enthusiasts prepare for technical
+              interviews. By providing a comprehensive system to track your solved LeetCode problems, analyze your
+              progress, and focus on areas that need improvement, we aim to boost your confidence and performance in
+              coding interviews.
+            </p>
           </div>
         </section>
         <section id="about" className="w-full py-12 md:py-24 lg:py-32">

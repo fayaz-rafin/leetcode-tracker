@@ -19,8 +19,9 @@ import { toast } from "@/hooks/use-toast";
 export function Navbar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  // Update the user state type to use the Supabase User type
+  const [user, setUser] = useState<{ id: string; email: string | undefined } | null>(null);
+  const [profile, setProfile] = useState<{ current_streak: number; avatar_url: string; username: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
 
@@ -39,7 +40,7 @@ export function Navbar() {
         return;
       }
 
-      setUser(user);
+      setUser({ id: user.id, email: user.email });
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -61,10 +62,10 @@ export function Navbar() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       router.push("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred during logout",
         variant: "destructive",
       });
     }

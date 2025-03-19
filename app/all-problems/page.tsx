@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // Add this import
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   ChevronLeft,
@@ -90,6 +91,7 @@ async function fetchLeetCodeProblems() {
 }
 
 export default function AllProblemsPage() {
+  const router = useRouter(); // Add this line to initialize the router
   const [problems, setProblems] = useState<Problem[]>([]);
   const [leetcodeProblems, setLeetcodeProblems] = useState<LeetCodeProblem[]>(
     []

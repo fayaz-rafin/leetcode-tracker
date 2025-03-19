@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// Remove the unused router import if not using it
+// import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,14 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
+// Define a type for the error
+interface AuthError {
+  message: string;
+}
+
 export default function LoginPage() {
-  const router = useRouter();
+  // Remove the unused router
+  // const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,11 +53,11 @@ export default function LoginPage() {
 
       // Force a hard navigation to the dashboard
       window.location.href = "/dashboard";
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as AuthError).message,
         variant: "destructive",
       });
     } finally {
@@ -95,7 +102,7 @@ export default function LoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/auth/signup" className="text-primary hover:underline">
               Sign up
             </Link>

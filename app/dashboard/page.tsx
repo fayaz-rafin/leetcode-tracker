@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/toaster";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AddProblemForm from "@/components/add-problem-form";
 import RecentProblems from "@/components/recent-problems";
@@ -21,12 +20,6 @@ import { Navbar } from "@/components/navbar";
 import { ContributionGraph } from "@/components/contribution-graph";
 import { calculateProblemStats, type ProblemStats } from "@/lib/problem-stats";
 import { LeaderboardCard } from "@/components/leaderboard-card";
-
-interface Profile {
-  id: string;
-  username: string | null;
-  avatar_url: string | null;
-}
 
 export default function Dashboard() {
   const router = useRouter();
