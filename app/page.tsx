@@ -54,7 +54,7 @@ export default function HomePage() {
                 <CheckCircle className="h-12 w-12 mb-4 text-green-500" />
                 <h3 className="text-xl font-bold mb-2">Problem Tracking</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Keep a record of all the LeetCode problems youve ever solved.
+                  Keep a record of all the LeetCode problems you&apos;ve ever solved.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center">
@@ -113,4 +113,3 @@ export default function HomePage() {
     </div>
   )
 }
-

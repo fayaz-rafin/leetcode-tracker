@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Trophy, Flame, Hash } from "lucide-react";
+import { useCallback } from "react"; // Add useCallback import
 import {
   Card,
   CardContent,
@@ -31,11 +32,7 @@ export function LeaderboardCard() {
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [leaderboardType]);
-
-  async function fetchLeaderboard() {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -95,7 +92,8 @@ export function LeaderboardCard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [leaderboardType, supabase]); // Add dependencies
+; // Add semicolon here
 
   const getTrophyIcon = (index: number) => {
     switch (index) {
@@ -109,6 +107,10 @@ export function LeaderboardCard() {
         return null;
     }
   };
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   return (
     <Card>

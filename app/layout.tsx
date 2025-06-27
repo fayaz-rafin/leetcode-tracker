@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { cookies } from 'next/headers' // Removed unused 'headers' import
+import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import localFont from "next/font/local"
 import "./globals.css"
@@ -32,7 +32,7 @@ export default async function RootLayout({
   const supabase = createServerComponentClient({ cookies })
   
   // Since you're not using session, just get the auth session without destructuring
-  await supabase.auth.getSession()
+  await supabase.auth.getSession();
   
   // Alternative: remove completely if you're not using Supabase in this component
 

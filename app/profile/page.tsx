@@ -10,7 +10,6 @@ import {
   Github,
   Linkedin,
   Code2,
-  
 } from "lucide-react";
 import {
   Card,
@@ -26,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/navbar";
+import { useCallback } from "react"; // Add useCallback import
 
 interface Profile {
   id: string;
@@ -35,12 +35,6 @@ interface Profile {
   leetcode_handle: string | null;
   github_handle: string | null;
   linkedin_url: string | null;
-}
-
-// Define a type for errors
-interface SupabaseError {
-  message: string;
-  code?: string;
 }
 
 export default function ProfilePage() {
@@ -58,7 +52,7 @@ export default function ProfilePage() {
 
   // Important: Add this function to make the component properly handle the dependency
   // Place this right after your state declarations
-  const getProfile = async () => {
+  const getProfile = useCallback(async () => {
     try {
       const {
         data: { user },
@@ -71,13 +65,13 @@ export default function ProfilePage() {
       }
 
       // Use const instead of let
-      const { data: profileData, error } = await supabase
+      const { data: profileData, error: fetchError } = await supabase // Renamed error to fetchError
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      if (error && error.code === "PGRST116") {
+      if (fetchError && fetchError.code === "PGRST116") { // Use fetchError
         const { data: newProfile, error: insertError } = await supabase
           .from("profiles")
           .insert({ id: user.id })
@@ -91,8 +85,8 @@ export default function ProfilePage() {
         setLeetcodeHandle(newProfile?.leetcode_handle || "");
         setGithubHandle(newProfile?.github_handle || "");
         setLinkedinUrl(newProfile?.linkedin_url || "");
-      } else if (error) {
-        throw error;
+      } else if (fetchError) { // Use fetchError
+        throw fetchError;
       } else {
         setProfile(profileData);
         setUsername(profileData?.username || "");
@@ -101,17 +95,17 @@ export default function ProfilePage() {
         setGithubHandle(profileData?.github_handle || "");
         setLinkedinUrl(profileData?.linkedin_url || "");
       }
-    } catch (error) {
+    } catch (error: unknown) { // Cast to unknown
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: "Failed to load profile",
+        description: (error as Error).message, // Cast to Error
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, supabase]); // Add router and supabase to dependencies
 
   // Fix useEffect dependency
   useEffect(() => {
@@ -173,10 +167,10 @@ export default function ProfilePage() {
       });
 
       await getProfile();
-    } catch (error) {
+    } catch (error: unknown) { // Cast to unknown
       toast({
         title: "Error",
-        description: (error as SupabaseError).message,
+        description: (error as Error).message, // Cast to Error
         variant: "destructive",
       });
     } finally {
@@ -185,7 +179,7 @@ export default function ProfilePage() {
   }
 
   // Fix the any types in handleProfileUpdate
-  async function handleProfileUpdate(e: React.FormEvent) {
+  async function handleProfileUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     try {
@@ -221,10 +215,9 @@ export default function ProfilePage() {
 
       await getProfile();
     } catch (error: unknown) {
-      // Use unknown instead of SupabaseError directly
       toast({
         title: "Error",
-        description: (error as SupabaseError).message,
+        description: (error as Error).message, // Cast to Error
         variant: "destructive",
       });
     } finally {
@@ -268,7 +261,6 @@ export default function ProfilePage() {
 
       await getProfile();
     } catch (error: unknown) {
-      // Changed from error: SupabaseError to error: unknown
       console.error("Upload error:", error);
       toast({
         title: "Error",

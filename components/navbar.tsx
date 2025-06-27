@@ -27,7 +27,7 @@ export function Navbar() {
 
   useEffect(() => {
     getUser();
-  }, []);
+  }, [getUser]);
 
   async function getUser() {
     try {

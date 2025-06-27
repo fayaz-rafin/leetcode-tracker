@@ -145,7 +145,7 @@ export default function AddProblemForm({
             setProblemName("");
           }
         }
-      } catch (error) {
+      } catch (error: unknown) { // Cast to unknown
         console.error("Error:", error);
       }
     } else {

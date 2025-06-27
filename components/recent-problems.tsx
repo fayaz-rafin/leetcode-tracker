@@ -57,7 +57,7 @@ export default function RecentProblems({
 
   useEffect(() => {
     fetchProblems();
-  }, []);
+  }, [fetchProblems]);
 
   useEffect(() => {
     const fetchChannel = async () => {

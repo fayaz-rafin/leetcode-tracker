@@ -17,14 +17,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-// Define a type for the error
-interface AuthError {
-  message: string;
-}
-
 export default function LoginPage() {
   // Remove the unused router
-  // const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,12 +46,14 @@ export default function LoginPage() {
       });
 
       // Force a hard navigation to the dashboard
-      window.location.href = "/dashboard";
+      if (typeof window !== "undefined") {
+        window.location.href = "/dashboard";
+      }
     } catch (error: unknown) {
       console.error("Login error:", error);
       toast({
         title: "Error",
-        description: (error as AuthError).message,
+        description: (error as Error).message, // Cast to Error instead of AuthError
         variant: "destructive",
       });
     } finally {

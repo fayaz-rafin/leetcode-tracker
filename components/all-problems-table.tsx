@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCallback } from "react"; // Add useCallback import
 
 type Problem = {
   id: string;
@@ -39,7 +40,7 @@ export default function AllProblemsTable() {
   });
   const supabase = createClientComponentClient();
 
-  const fetchProblems = async () => {
+  const fetchProblems = useCallback(async () => {
     try {
       // Get current user
       const {
@@ -77,11 +78,11 @@ export default function AllProblemsTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, supabase]); // Add filters and supabase to dependencies
 
   useEffect(() => {
     fetchProblems();
-  }, [filters]);
+  }, [fetchProblems]);
 
   return (
     <div className="space-y-4">

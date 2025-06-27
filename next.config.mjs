@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone', // Important for Cloudflare deployment
   images: {
     remotePatterns: [
       {

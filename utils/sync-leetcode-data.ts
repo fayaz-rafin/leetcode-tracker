@@ -2,6 +2,20 @@
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { fetchAllLeetCodeProblems } from "@/lib/leetcode-api";
 
+// Define types for LeetCode problem and tag
+interface LeetCodeTag {
+  name: string;
+  slug: string;
+}
+
+interface LeetCodeProblem {
+  questionId: string;
+  title: string;
+  titleSlug: string;
+  difficulty: string;
+  topicTags: LeetCodeTag[];
+}
+
 export async function syncLeetCodeData() {
   const supabase = createClientComponentClient();
 
@@ -20,7 +34,7 @@ export async function syncLeetCodeData() {
     // Update each problem with LeetCode data
     for (const problem of dbProblems) {
       const leetcodeProblem = problems.find(
-        (p: any) => parseInt(p.questionId) === problem.number
+        (p: LeetCodeProblem) => parseInt(p.questionId) === problem.number
       );
 
       if (leetcodeProblem) {
@@ -29,7 +43,7 @@ export async function syncLeetCodeData() {
           .update({
             leetcode_url: `https://leetcode.com/problems/${leetcodeProblem.titleSlug}`,
             problem_types: leetcodeProblem.topicTags.map(
-              (tag: any) => tag.name
+              (tag: LeetCodeTag) => tag.name
             ),
           })
           .eq("id", problem.id);

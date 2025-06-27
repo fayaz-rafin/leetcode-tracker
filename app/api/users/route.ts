@@ -16,8 +16,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(user);
-  } catch (error) {
-    console.error("Error creating user:", error);
+  } catch (err: unknown) {
+    console.error("Error creating user:", err instanceof Error ? err : err); // Cast to Error for message if needed
     
     return NextResponse.json(
       { error: "Failed to create user" },

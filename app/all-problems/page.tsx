@@ -1,7 +1,7 @@
 // app/all-problems/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; // Add this import
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
@@ -113,9 +113,70 @@ export default function AllProblemsPage() {
     fetchLeetCodeData();
   }, []);
 
+  const fetchProblems = useCallback(async () => {
+    try {
+      setLoading(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/auth/login");
+        return;
+      }
+
+      let query = supabase
+        .from("problems")
+        .select("*", { count: "exact" })
+        .eq("user_id", user.id)
+        .order("date_solved", { ascending: false });
+
+      if (filters.number) {
+        query = query.eq("number", parseInt(filters.number));
+      }
+      if (filters.name) {
+        query = query.ilike("name", `%${filters.name}%`);
+      }
+      if (filters.difficulty !== "all") {
+        query = query.eq("difficulty", filters.difficulty);
+      }
+      if (filters.type !== "all") {
+        query = query.contains("problem_types", [filters.type]);
+      }
+
+      const start = (currentPage - 1) * PROBLEMS_PER_PAGE;
+      const end = start + PROBLEMS_PER_PAGE - 1;
+      query = query.range(start, end);
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      // Enhance problems with LeetCode URLs
+      const enhancedProblems =
+        data?.map((problem) => ({
+          ...problem,
+          leetcode_url:
+            problem.leetcode_url || generateLeetCodeUrl(problem.name),
+        })) || [];
+
+      setProblems(enhancedProblems);
+      if (count !== null) setTotalProblems(count);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load problems",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, filters, currentPage, router]);
+
   useEffect(() => {
     fetchProblems();
-  }, [filters, currentPage]);
+  }, [fetchProblems]);
 
   async function fetchLeetCodeData() {
     try {
@@ -177,72 +238,14 @@ export default function AllProblemsPage() {
     }
   }
 
-  async function fetchProblems() {
-    try {
-      setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
-
-      let query = supabase
-        .from("problems")
-        .select("*", { count: "exact" })
-        .eq("user_id", user.id)
-        .order("date_solved", { ascending: false });
-
-      if (filters.number) {
-        query = query.eq("number", parseInt(filters.number));
-      }
-      if (filters.name) {
-        query = query.ilike("name", `%${filters.name}%`);
-      }
-      if (filters.difficulty !== "all") {
-        query = query.eq("difficulty", filters.difficulty);
-      }
-      if (filters.type !== "all") {
-        query = query.contains("problem_types", [filters.type]);
-      }
-
-      const start = (currentPage - 1) * PROBLEMS_PER_PAGE;
-      const end = start + PROBLEMS_PER_PAGE - 1;
-      query = query.range(start, end);
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
-      // Enhance problems with LeetCode URLs
-      const enhancedProblems =
-        data?.map((problem) => ({
-          ...problem,
-          leetcode_url:
-            problem.leetcode_url || generateLeetCodeUrl(problem.name),
-        })) || [];
-
-      setProblems(enhancedProblems);
-      if (count !== null) setTotalProblems(count);
-    } catch (error) {
-      console.error("Error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load problems",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
   const handleProblemClick = (problem: Problem) => {
-    window.open(
-      problem.leetcode_url || generateLeetCodeUrl(problem.name),
-      "_blank"
-    );
+    if (typeof window !== "undefined" && problem.leetcode_url) {
+      window.open(
+        problem.leetcode_url,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
   };
 
   return (

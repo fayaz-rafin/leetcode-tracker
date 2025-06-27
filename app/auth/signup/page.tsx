@@ -18,14 +18,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
-// Create an interface for auth errors
-interface AuthError {
-  message: string;
-}
-
 export default function SignUpPage() {
   // Remove unused router
-  // const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,12 +30,12 @@ export default function SignUpPage() {
     try {
       setLoading(true);
 
-      // Destructure only what we need (remove data if unused)
+      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectTo,
         },
       });
 
@@ -59,7 +53,7 @@ export default function SignUpPage() {
     } catch (error: unknown) {
       toast({
         title: "Error",
-        description: (error as AuthError).message,
+        description: (error as Error).message, // Cast to Error
         variant: "destructive",
       });
     } finally {

@@ -10,6 +10,7 @@ import {
   eachWeekOfInterval,
 } from "date-fns";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useCallback } from "react"; // Add useCallback import
 
 type ContributionDay = {
   date: Date;
@@ -22,11 +23,7 @@ export function ContributionGraph() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    fetchContributions();
-  }, []);
-
-  async function fetchContributions() {
+  const fetchContributions = useCallback(async () => {
     try {
       const {
         data: { user },
@@ -69,7 +66,11 @@ export function ContributionGraph() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [isMobile, supabase]); // Add isMobile and supabase to dependencies
+
+  useEffect(() => {
+    fetchContributions();
+  }, [fetchContributions]);
 
   const getColorForCount = (count: number) => {
     if (count === 0) return "bg-gray-100 dark:bg-gray-800";

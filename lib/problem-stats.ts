@@ -7,7 +7,7 @@ export interface ProblemStats {
   mediumCount: number;
   hardCount: number;
   currentStreak: number;
-  solvedToday: number; // Add this property
+  solvedToday: number;
   solvedThisWeek: number;
   solvedThisMonth: number;
   streakMessage: string;
@@ -78,6 +78,21 @@ export async function calculateProblemStats(): Promise<ProblemStats> {
     ).length;
     const hardCount = problems.filter((p) => p.difficulty === "Hard").length;
 
+    // Calculate problems solved today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const solvedToday = problems.filter(
+      (problem) => new Date(problem.date_solved) >= today
+    ).length;
+
+    // Calculate problems solved this month
+    const firstOfMonth = new Date();
+    firstOfMonth.setDate(1);
+    firstOfMonth.setHours(0, 0, 0, 0);
+    const solvedThisMonth = problems.filter(
+      (problem) => new Date(problem.date_solved) >= firstOfMonth
+    ).length;
+
     return {
       totalSolved,
       solvedThisWeek,
@@ -86,8 +101,8 @@ export async function calculateProblemStats(): Promise<ProblemStats> {
       easyCount,
       mediumCount,
       hardCount,
-      solvedToday: 0, // Placeholder value
-      solvedThisMonth: 0, // Placeholder value
+      solvedToday,
+      solvedThisMonth,
     };
   } catch (error) {
     console.error("Error calculating stats:", error);

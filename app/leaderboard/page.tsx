@@ -5,14 +5,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Trophy, Flame, Hash, ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/navbar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCallback } from "react"; // Add useCallback import
 
 type LeaderboardUser = {
   id: string;
@@ -36,7 +34,7 @@ export default function LeaderboardPage() {
   const supabase = createClientComponentClient();
 
   // Define fetchLeaderboard function
-  async function fetchLeaderboard() {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -111,17 +109,17 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [leaderboardType, currentPage, supabase]); // Add supabase to dependencies
 
   // Fix useEffect dependency
   useEffect(() => {
     fetchLeaderboard();
-  }, [leaderboardType, currentPage, fetchLeaderboard]);
+  }, [fetchLeaderboard]);
 
-  const handleUserClick = (username: string) => {
+  const handleUserClick = useCallback((username: string) => {
     console.log("Navigating to user:", username); // Debug log
     router.push(`/users/${username}`);
-  };
+  }, [router]);
 
   const totalPages = Math.ceil(totalUsers / USERS_PER_PAGE);
 
