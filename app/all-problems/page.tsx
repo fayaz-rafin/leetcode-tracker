@@ -3,7 +3,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; // Add this import
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
+import { DEV_AUTH_BYPASS, DEV_PROBLEMS } from "@/lib/dev-mode";
 import {
   ChevronLeft,
   ChevronRight,
@@ -107,9 +108,13 @@ export default function AllProblemsPage() {
     type: "all",
   });
   const [problemTypes, setProblemTypes] = useState<string[]>([]);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   useEffect(() => {
+    if (DEV_AUTH_BYPASS) {
+      setProblemTypes(Array.from(new Set(DEV_PROBLEMS.flatMap((problem) => problem.problem_types))).sort());
+      return;
+    }
     fetchLeetCodeData();
   }, []);
 
@@ -194,6 +199,10 @@ export default function AllProblemsPage() {
   }
 
   async function syncWithLeetCode() {
+    if (DEV_AUTH_BYPASS) {
+      toast({ title: "Local demo", description: "Sync is disabled for the local save file." });
+      return;
+    }
     if (!leetcodeProblems.length) return;
 
     try {
@@ -251,10 +260,14 @@ export default function AllProblemsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 py-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">All Solved Problems</h1>
+      <main className="retro-page">
+        <div className="retro-container">
+          <div className="mb-8 flex flex-col justify-between gap-5 border-b-2 border-foreground pb-8 md:flex-row md:items-end">
+            <div>
+              <div className="retro-kicker">Solve archive / {totalProblems} records</div>
+              <h1 className="text-4xl font-black md:text-6xl">Problem ledger</h1>
+              <p className="mt-3 max-w-xl text-muted-foreground">Search your history, revisit weak patterns, and choose the next problem with intention.</p>
+            </div>
             <Button
               onClick={syncWithLeetCode}
               disabled={syncing}
@@ -264,12 +277,12 @@ export default function AllProblemsPage() {
               <RefreshCw
                 className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`}
               />
-              {syncing ? "Syncing..." : "Sync with LeetCode"}
+              {syncing ? "Syncing..." : DEV_AUTH_BYPASS ? "Demo save" : "Sync LeetCode"}
             </Button>
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="retro-panel mb-8 grid grid-cols-1 gap-4 bg-secondary p-4 md:grid-cols-4 md:p-5">
             <Input
               placeholder="Problem number"
               value={filters.number}
@@ -322,7 +335,7 @@ export default function AllProblemsPage() {
           </div>
 
           {/* Problems Table */}
-          <div className="rounded-md border">
+          <div className="retro-panel hidden overflow-x-auto bg-card md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -357,7 +370,7 @@ export default function AllProblemsPage() {
                       <TableCell>
                         <button
                           onClick={() => handleProblemClick(problem)}
-                          className="flex items-center gap-2 hover:text-primary text-left w-full"
+                          className="group flex w-full items-center gap-2 text-left hover:text-primary"
                         >
                           {problem.name}
                           <ExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -373,7 +386,7 @@ export default function AllProblemsPage() {
                               : "destructive"
                           }
                         >
-                          {problem.difficulty}
+                          {problem.difficulty === "Easy" ? "◆ Easy" : problem.difficulty === "Medium" ? "▲ Medium" : "■ Hard"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -400,9 +413,45 @@ export default function AllProblemsPage() {
             </Table>
           </div>
 
+          <div className="retro-panel divide-y-2 divide-foreground bg-card md:hidden">
+            {loading ? (
+              <p className="p-5 text-center">Loading problems...</p>
+            ) : problems.length === 0 ? (
+              <p className="p-5 text-center text-muted-foreground">No problems found</p>
+            ) : (
+              problems.map((problem) => (
+                <button
+                  key={problem.id}
+                  type="button"
+                  onClick={() => handleProblemClick(problem)}
+                  className="group grid w-full gap-3 p-4 text-left transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-ring"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="font-mono text-[10px] font-black uppercase tracking-widest text-muted-foreground">#{String(problem.number).padStart(4, "0")}</span>
+                      <span className="mt-1 flex items-center gap-2 font-bold">
+                        {problem.name}<ExternalLink className="h-4 w-4 shrink-0" />
+                      </span>
+                    </div>
+                    <Badge variant={problem.difficulty === "Easy" ? "secondary" : problem.difficulty === "Medium" ? "default" : "destructive"}>
+                      {problem.difficulty === "Easy" ? "◆ Easy" : problem.difficulty === "Medium" ? "▲ Medium" : "■ Hard"}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {problem.problem_types?.map((type) => <Badge key={type} variant="outline">{type}</Badge>)}
+                  </div>
+                  <div className="flex justify-between gap-4 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <span>Solved {problem.times_solved}x</span>
+                    <span>{new Date(problem.date_solved).toLocaleDateString()}</span>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
           {/* Pagination */}
           {!loading && problems.length > 0 && (
-            <div className="flex items-center justify-between mt-4 py-4">
+            <div className="mt-4 flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted-foreground">
                 Showing {(currentPage - 1) * PROBLEMS_PER_PAGE + 1} to{" "}
                 {Math.min(currentPage * PROBLEMS_PER_PAGE, totalProblems)} of{" "}

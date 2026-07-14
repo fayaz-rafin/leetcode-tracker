@@ -1,5 +1,5 @@
 // lib/problem-stats.ts
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 
 export interface ProblemStats {
   totalSolved: number;
@@ -15,7 +15,7 @@ export interface ProblemStats {
 }
 
 export async function calculateProblemStats(): Promise<ProblemStats> {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   try {
     // Get current user

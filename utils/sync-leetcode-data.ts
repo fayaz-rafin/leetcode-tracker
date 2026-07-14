@@ -1,5 +1,5 @@
 // utils/sync-leetcode-data.ts
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 import { fetchAllLeetCodeProblems } from "@/lib/leetcode-api";
 
 // Define types for LeetCode problem and tag
@@ -17,7 +17,7 @@ interface LeetCodeProblem {
 }
 
 export async function syncLeetCodeData() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   try {
     // Fetch all LeetCode problems

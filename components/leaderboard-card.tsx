@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 import { Trophy, Flame, Hash } from "lucide-react";
 import { useCallback } from "react"; // Add useCallback import
 import {
@@ -30,7 +30,7 @@ export function LeaderboardCard() {
   );
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -113,12 +113,13 @@ export function LeaderboardCard() {
   }, [fetchLeaderboard]);
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="pb-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div>
-            <CardTitle>Leaderboard</CardTitle>
-            <CardDescription>Top performers in the community</CardDescription>
+            <div className="retro-kicker">Local high scores</div>
+            <CardTitle className="text-2xl">Leaderboard</CardTitle>
+            <CardDescription>Players keeping the strongest rhythm.</CardDescription>
           </div>
           <div className="flex gap-2">
             <Button
@@ -163,7 +164,7 @@ export function LeaderboardCard() {
             users.map((user, index) => (
               <div
                 key={user.id}
-                className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted transition-colors"
+                className="flex items-center gap-4 border-b border-foreground/20 p-3 last:border-0 hover:bg-accent transition-colors"
               >
                 <div className="flex items-center justify-center w-6">
                   {getTrophyIcon(index)}

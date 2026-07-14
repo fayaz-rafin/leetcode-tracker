@@ -1,8 +1,8 @@
 // components/recent-problems.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useCallback, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 
 type Problem = {
@@ -23,9 +23,9 @@ export default function RecentProblems({
 }: RecentProblemsProps) {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
-  const fetchProblems = async () => {
+  const fetchProblems = useCallback(async () => {
     try {
       // First get the current user
       const {
@@ -53,15 +53,21 @@ export default function RecentProblems({
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     fetchProblems();
   }, [fetchProblems]);
 
   useEffect(() => {
-    const fetchChannel = async () => {
-      const channel = supabase
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let cancelled = false;
+
+    const subscribe = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+
+      channel = supabase
         .channel("problems_changes")
         .on(
           "postgres_changes",
@@ -69,7 +75,7 @@ export default function RecentProblems({
             event: "*",
             schema: "public",
             table: "problems",
-            filter: `user_id=eq.${(await supabase.auth.getUser()).data.user?.id}`, // Add filter for real-time updates
+            filter: `user_id=eq.${user.id}`,
           },
           () => {
             fetchProblems();
@@ -80,25 +86,27 @@ export default function RecentProblems({
         )
         .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
     };
 
-    fetchChannel();
-  }, [supabase, onProblemAdded]);
+    void subscribe();
+
+    return () => {
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, [supabase, fetchProblems, onProblemAdded]);
 
   if (loading) {
     return <div>Loading recent problems...</div>;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="divide-y divide-foreground/20">
       {problems.length === 0 ? (
         <p className="text-sm text-muted-foreground">No problems solved yet.</p>
       ) : (
         problems.map((problem) => (
-          <div key={problem.id} className="flex items-center">
+          <div key={problem.id} className="flex items-center py-4 first:pt-0 last:pb-0">
             <Badge
               variant={
                 problem.difficulty === "Easy"
@@ -108,11 +116,11 @@ export default function RecentProblems({
                   : "destructive"
               }
             >
-              {problem.difficulty}
+              {problem.difficulty === "Easy" ? "◆ Easy" : problem.difficulty === "Medium" ? "▲ Medium" : "■ Hard"}
             </Badge>
             <div className="ml-4 space-y-1">
               <p className="text-sm font-medium leading-none">
-                {problem.number}. {problem.name}
+                <span className="font-mono text-xs font-black text-muted-foreground">#{String(problem.number).padStart(4, "0")}</span> {problem.name}
                 {problem.times_solved > 1 && (
                   <span className="ml-2 text-xs text-muted-foreground">
                     (Solved {problem.times_solved} times)

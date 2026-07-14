@@ -1,0 +1,96 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "LeetTrack dashboard" [ref=e5] [cursor=pointer]:
+        - /url: /dashboard
+        - generic [ref=e10]: LeetTrack
+    - main [ref=e11]:
+      - generic [ref=e12]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: "> Player dashboard / run active"
+          - heading [level=1] [ref=e16]:
+            - text: Hey,
+            - generic [ref=e17]: player_one
+            - text: .
+          - paragraph [ref=e19]: Your streak is alive. Finish today's quest and keep the momentum moving.
+          - paragraph [ref=e20]: Synced 01:35 AM
+        - region "Current statistics" [ref=e21]:
+          - generic [ref=e22]:
+            - paragraph [ref=e23]: Total solved
+            - paragraph [ref=e24]: "147"
+            - paragraph [ref=e25]: +11 this week
+          - generic [ref=e26]:
+            - paragraph [ref=e27]: Current streak
+            - paragraph [ref=e28]: 12d
+            - paragraph [ref=e29]: "Personal best: 12 days"
+          - generic [ref=e30]:
+            - paragraph [ref=e31]: This month
+            - paragraph [ref=e32]: "38"
+            - paragraph [ref=e33]: of 50 target
+          - generic [ref=e34]:
+            - paragraph [ref=e35]: Hard clears
+            - paragraph [ref=e36]: "16"
+            - paragraph [ref=e37]: boss levels beaten
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic [ref=e40]:
+              - generic [ref=e42]:
+                - generic [ref=e43]: Today's quest
+                - generic [ref=e44]: Three clean solves
+              - generic [ref=e49]: Quality reps beat random grinding.
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - generic [ref=e52]: 2/3
+                - generic [ref=e53]: in progress
+              - progressbar [ref=e54]
+              - generic [ref=e56]:
+                - paragraph [ref=e57]:
+                  - generic [ref=e58]: ◆ warm-up
+                  - generic [ref=e59]: cleared
+                - paragraph [ref=e60]:
+                  - generic [ref=e61]: ▲ core pattern
+                  - generic [ref=e62]: cleared
+                - paragraph [ref=e63]:
+                  - generic [ref=e64]: ■ stretch problem
+                  - generic [ref=e65]: next
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]: "> Commit history"
+              - generic [ref=e70]: Practice activity
+              - generic [ref=e71]: Every square is a solved problem.
+            - generic [ref=e72]: 12 days
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - generic [ref=e80]:
+                - generic [ref=e81]: "> Latest checkpoints"
+                - generic [ref=e82]: Recent solutions
+              - link "Open ledger" [ref=e83] [cursor=pointer]:
+                - /url: /all-problems
+            - generic [ref=e84]: Loading recent problems...
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: "> Local high scores"
+              - generic [ref=e91]: Leaderboard
+              - generic [ref=e92]: Players keeping the strongest rhythm.
+            - generic [ref=e93]:
+              - button "Problems" [ref=e94]
+              - button "Streak" [ref=e95]
+        - generic [ref=e113]:
+          - generic [ref=e114]:
+            - generic [ref=e115]: "> Build balance"
+            - heading "Difficulty mix" [level=2] [ref=e116]
+            - paragraph [ref=e117]: A healthy run mixes confidence builders with harder pattern work.
+          - generic [ref=e124]:
+            - generic [ref=e126]:
+              - generic [ref=e127]: ◆ Easy
+              - generic [ref=e128]: "63"
+            - generic [ref=e132]:
+              - generic [ref=e133]: ▲ Medium
+              - generic [ref=e134]: "68"
+            - generic [ref=e138]:
+              - generic [ref=e139]: ■ Hard
+              - generic [ref=e140]: "16"
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=e148] [cursor=pointer]

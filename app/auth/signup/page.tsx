@@ -8,13 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AuthShell } from "@/components/auth-shell";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -23,6 +17,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +36,7 @@ export default function SignUpPage() {
 
       if (error) throw error;
 
+      setConfirmationEmail(email);
       toast({
         title: "Check your email",
         description:
@@ -62,13 +58,19 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <AuthShell eyebrow="Start from checkpoint zero" title="Create your save file." description="Your solve history, streak, and weak patterns—all in one focused workspace.">
+          {confirmationEmail ? (
+            <div className="border-2 border-foreground bg-accent p-5 shadow-[4px_4px_0_0_var(--ink)]" role="status">
+              <div className="font-mono text-xs font-black uppercase tracking-[0.16em]">Checkpoint created</div>
+              <h2 className="mt-2 text-2xl font-black">Check your inbox.</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                We sent the confirmation link to <strong className="text-foreground">{confirmationEmail}</strong>. Open it to activate your account.
+              </p>
+              <Button variant="outline" className="mt-5" onClick={() => setConfirmationEmail(null)}>
+                Use another email
+              </Button>
+            </div>
+          ) : (
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -92,18 +94,17 @@ export default function SignUpPage() {
                 minLength={6}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating Account..." : "Sign Up"}
+            <Button type="submit" className="w-full bg-destructive text-destructive-foreground" disabled={loading}>
+              {loading ? "Creating save..." : "Create account"}
             </Button>
           </form>
+          )}
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <Link href="/auth/login" className="text-primary hover:underline">
-              Login
+            <Link href="/auth/login" className="font-bold underline decoration-2 underline-offset-4">
+              Load your save file
             </Link>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+    </AuthShell>
   );
 }

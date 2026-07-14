@@ -1,183 +1,148 @@
-// components/navbar.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Menu, Flame } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Braces, Flame, Menu, Plus } from "lucide-react";
+
+import { createClient } from "@/lib/supabase";
+import { DEV_AUTH_BYPASS } from "@/lib/dev-mode";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 
+const links = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/all-problems", label: "Problems" },
+  { href: "/leaderboard", label: "Ranks" },
+];
+
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  // Update the user state type to use the Supabase User type
   const [user, setUser] = useState<{ id: string; email: string | undefined } | null>(null);
   const [profile, setProfile] = useState<{ current_streak: number; avatar_url: string; username: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
-  useEffect(() => {
-    getUser();
-  }, [getUser]);
-
-  async function getUser() {
+  const getUser = useCallback(async () => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         router.push("/auth/login");
         return;
       }
 
       setUser({ id: user.id, email: user.email });
-
-      const { data: profile, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
 
       if (profileError) throw profileError;
-      setProfile(profile);
+      setProfile(profileData);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Navbar user error:", error);
     } finally {
       setLoading(false);
     }
-  }
+  }, [router, supabase]);
+
+  useEffect(() => {
+    void getUser();
+  }, [getUser]);
 
   const handleLogout = async () => {
+    if (DEV_AUTH_BYPASS) {
+      router.push("/");
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       router.push("/");
     } catch (error: unknown) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An error occurred during logout",
+        title: "Logout failed",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background">
-      <div className="flex h-14 items-center px-4 md:px-6">
-        {/* Logo */}
-        <Link href="/" className="font-bold text-lg">
-          LeetCode Tracker
+    <header className="sticky top-0 z-50 border-b-2 border-foreground bg-card/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-18 max-w-7xl items-center gap-4 px-4 md:px-8">
+        <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5" aria-label="LeetTrack dashboard">
+          <span className="grid h-9 w-9 place-items-center border-2 border-foreground bg-accent shadow-[2px_2px_0_0_var(--ink)]">
+            <Braces className="h-4 w-4" />
+          </span>
+          <span className="hidden font-mono text-sm font-black uppercase sm:block">Leet<span className="text-destructive">Track</span></span>
         </Link>
 
         {!loading && user && (
           <>
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-6 ml-auto">
-              <nav className="flex items-center gap-6">
-                <Link href="/dashboard" className="text-sm font-medium">
-                  Dashboard
-                </Link>
-                <Link href="/all-problems" className="text-sm font-medium">
-                  All Problems
-                </Link>
-                <Link href="/leaderboard" className="text-sm font-medium">
-                  Leaderboard
-                </Link>
-              </nav>
+            <nav className="ml-4 hidden h-full items-stretch md:flex" aria-label="Application navigation">
+              {links.map((link) => {
+                const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`relative flex items-center px-4 font-mono text-xs font-bold uppercase tracking-wider transition-colors ${active ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
 
-              {/* Streak */}
-              <div className="flex items-center gap-1">
-                <Flame className="h-4 w-4 text-orange-500" />
-                <span className="text-sm font-medium">
-                  {profile?.current_streak || 0}
-                </span>
-              </div>
-
-              {/* Avatar */}
-              <Link href="/profile">
-                <Avatar className="h-8 w-8">
+            <div className="ml-auto hidden items-center gap-3 md:flex">
+              {DEV_AUTH_BYPASS && <span className="retro-chip bg-secondary">local demo</span>}
+              <span className="flex h-9 items-center gap-1.5 border-2 border-foreground bg-[var(--sun)] px-3 font-mono text-xs font-black" title="Current streak">
+                <Flame className="h-4 w-4" /> {profile?.current_streak || 0}
+              </span>
+              <Button asChild size="sm" className="bg-destructive text-destructive-foreground">
+                <Link href="/dashboard#log-solution"><Plus /> Log solution</Link>
+              </Button>
+              <Link href="/profile" aria-label="Open profile">
+                <Avatar className="h-10 w-10 border-2 border-foreground">
                   <AvatarImage src={profile?.avatar_url} />
-                  <AvatarFallback>
-                    {profile?.username?.[0]?.toUpperCase() ||
-                      user.email?.[0]?.toUpperCase()}
+                  <AvatarFallback className="bg-secondary font-mono font-black">
+                    {profile?.username?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </Link>
-
-              {/* Logout */}
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
             </div>
 
-            {/* Mobile Navigation */}
-            <div className="md:hidden flex items-center gap-4 ml-auto">
-              <div className="flex items-center gap-1">
-                <Flame className="h-4 w-4 text-orange-500" />
-                <span className="text-sm font-medium">
-                  {profile?.current_streak || 0}
-                </span>
-              </div>
-
+            <div className="ml-auto flex items-center gap-2 md:hidden">
+              <span className="flex h-9 items-center gap-1 border-2 border-foreground bg-[var(--sun)] px-2 font-mono text-xs font-black"><Flame className="h-4 w-4" />{profile?.current_streak || 0}</span>
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                  </Button>
+                  <Button variant="outline" size="icon" aria-label="Open navigation"><Menu /></Button>
                 </SheetTrigger>
-                <SheetContent side="right">
-                  <SheetHeader className="border-b pb-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={profile?.avatar_url} />
-                        <AvatarFallback>
-                          {profile?.username?.[0]?.toUpperCase() ||
-                            user?.email?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {profile?.username || user?.email}
-                        </span>
-                        <Link
-                          href="/profile"
-                          className="text-xs text-muted-foreground hover:text-primary"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          View Profile
-                        </Link>
-                      </div>
-                    </div>
-                  </SheetHeader>
-                  <nav className="flex flex-col gap-4">
-                    <Link href="/dashboard" onClick={() => setIsOpen(false)}>
-                      Dashboard
-                    </Link>
-                    <Link href="/all-problems" onClick={() => setIsOpen(false)}>
-                      All Problems
-                    </Link>
-                    <Link href="/leaderboard" onClick={() => setIsOpen(false)}>
-                      Leaderboard
-                    </Link>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        handleLogout();
-                        setIsOpen(false);
-                      }}
-                    >
-                      Logout
-                    </Button>
+                <SheetContent side="right" className="border-l-2 border-foreground bg-card p-5">
+                  <SheetTitle className="sr-only">Application navigation</SheetTitle>
+                  <div className="flex items-center gap-3 border-b-2 border-foreground pb-5">
+                    <Avatar className="h-11 w-11 border-2 border-foreground">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback>{profile?.username?.[0]?.toUpperCase() || "P"}</AvatarFallback>
+                    </Avatar>
+                    <div><p className="font-mono text-sm font-black">{profile?.username || user.email}</p><p className="text-xs text-muted-foreground">player profile</p></div>
+                  </div>
+                  <nav className="mt-5 grid gap-2">
+                    {links.map((link, index) => (
+                      <Link key={link.href} href={link.href} className="border-b border-foreground/20 py-3 font-mono font-bold" onClick={() => setIsOpen(false)}>
+                        0{index + 1} / {link.label}
+                      </Link>
+                    ))}
+                    <Button asChild className="mt-3 bg-destructive text-destructive-foreground"><Link href="/dashboard#log-solution" onClick={() => setIsOpen(false)}><Plus /> Log solution</Link></Button>
+                    <Button variant="outline" className="mt-2" onClick={() => { void handleLogout(); setIsOpen(false); }}>{DEV_AUTH_BYPASS ? "Exit demo" : "Log out"}</Button>
                   </nav>
                 </SheetContent>
               </Sheet>

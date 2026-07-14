@@ -1,363 +1,180 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Toaster } from "@/components/ui/toaster";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowRight, Flame, Plus, Target, Trophy } from "lucide-react";
+
+import { createClient } from "@/lib/supabase";
+import { DEV_AUTH_BYPASS, DEV_STATS, DEV_USER } from "@/lib/dev-mode";
+import { calculateProblemStats, type ProblemStats } from "@/lib/problem-stats";
+import { Navbar } from "@/components/navbar";
 import AddProblemForm from "@/components/add-problem-form";
 import RecentProblems from "@/components/recent-problems";
-import { Navbar } from "@/components/navbar";
 import { ContributionGraph } from "@/components/contribution-graph";
-import { calculateProblemStats, type ProblemStats } from "@/lib/problem-stats";
 import { LeaderboardCard } from "@/components/leaderboard-card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 export default function Dashboard() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<ProblemStats | null>(null);
-  const [username, setUsername] = useState<string>("");
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [loading, setLoading] = useState(!DEV_AUTH_BYPASS);
+  const [stats, setStats] = useState<ProblemStats | null>(DEV_AUTH_BYPASS ? DEV_STATS : null);
+  const [username, setUsername] = useState(DEV_AUTH_BYPASS ? DEV_USER.username : "");
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClientComponentClient();
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
-  };
-
-  const getMotivationalMessage = () => {
-    if (!stats) return "Start your coding journey today!";
-
-    if (stats.solvedToday) {
-      return "Great work today! Keep the momentum going! 🚀";
-    }
-
-    if (stats.currentStreak > 5) {
-      return `Impressive ${stats.currentStreak}-day streak! You're on fire! 🔥`;
-    }
-
-    if (stats.solvedThisWeek > 10) {
-      return "You're crushing it this week! 💪";
-    }
-
-    return "Ready to tackle some problems? Let's go! 💻";
-  };
+  const supabase = createClient();
 
   const loadStats = async () => {
     try {
-      const stats = await calculateProblemStats();
-      setStats(stats);
+      const nextStats = DEV_AUTH_BYPASS ? DEV_STATS : await calculateProblemStats();
+      setStats(nextStats);
       setLastUpdated(new Date());
       setError(null);
-    } catch (error) {
-      console.error("Error loading stats:", error);
-      setError("Failed to load statistics. Please try again later.");
+    } catch (loadError) {
+      console.error("Stats error:", loadError);
+      setError("Could not load your latest stats. Try refreshing the run.");
     }
   };
 
   useEffect(() => {
+    let subscription: ReturnType<typeof supabase.channel> | undefined;
+
     const checkUser = async () => {
       try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) {
           router.push("/auth/login");
           return;
         }
 
-        // Get user profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("username")
-          .eq("id", user.id)
-          .single();
-
-        setUsername(profile?.username || user.email?.split("@")[0] || "Coder");
-
+        const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+        setUsername(profile?.username || user.email?.split("@")[0] || DEV_USER.username);
         await loadStats();
 
-        // Set up real-time subscription
-        const problemsSubscription = supabase
-          .channel("problems-changes")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "problems",
-            },
-            () => {
-              loadStats();
-            }
-          )
-          .subscribe();
-
-        return () => {
-          problemsSubscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Dashboard error:", error);
-        setError("An error occurred while loading the dashboard.");
-        router.push("/auth/login");
+        if (!DEV_AUTH_BYPASS) {
+          subscription = supabase
+            .channel("problems-changes")
+            .on("postgres_changes", { event: "*", schema: "public", table: "problems" }, () => void loadStats())
+            .subscribe();
+        }
+      } catch (dashboardError) {
+        console.error("Dashboard error:", dashboardError);
+        if (!DEV_AUTH_BYPASS) router.push("/auth/login");
       } finally {
         setLoading(false);
       }
     };
 
-    checkUser();
+    void checkUser();
+    return () => {
+      if (subscription) void subscription.unsubscribe();
+    };
   }, [router, supabase]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="retro-panel bg-accent px-8 py-6 font-mono text-sm font-black uppercase tracking-widest">Loading save file<span className="animate-pulse">_</span></div>
       </div>
     );
   }
 
+  const solved = stats?.totalSolved || 0;
+  const dailyPercent = Math.min(((stats?.solvedToday || 0) / 3) * 100, 100);
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="flex-1 p-4 md:p-6 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      <main className="retro-page">
+        <div className="retro-container space-y-10">
+          {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
 
-          {/* Welcome Section */}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">
-              {getGreeting()}, {username}! 👋
-            </h1>
-            <p className="text-muted-foreground">{getMotivationalMessage()}</p>
-            <p className="text-xs text-muted-foreground">
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </p>
-          </div>
+          <section className="grid gap-6 border-b-2 border-foreground pb-8 md:grid-cols-[1fr_auto] md:items-end">
+            <div>
+              <div className="retro-kicker">Player dashboard / run active</div>
+              <h1 className="text-4xl font-black leading-none md:text-6xl">
+                Hey, <span className="relative inline-block"><span className="absolute inset-x-0 bottom-0 h-3 bg-accent" aria-hidden="true" /><span className="relative">{username}</span></span>.
+              </h1>
+              <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+                Your streak is alive. Finish today&apos;s quest and keep the momentum moving.
+              </p>
+              <p className="mt-2 font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Synced {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+            </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Solved
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {stats?.totalSolved || 0}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  +{stats?.solvedThisWeek || 0} this week
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Current Streak
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {stats?.currentStreak || 0} days
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {stats?.streakMessage || "Start your streak today!"}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Completion Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Math.round(((stats?.totalSolved || 0) / 2500) * 100)}%
-                </div>
-                <Progress
-                  value={((stats?.totalSolved || 0) / 2500) * 100}
-                  className="mt-2"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Of total LeetCode problems
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Average Per Day
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {stats?.totalSolved
-                    ? (stats.solvedThisWeek / 7).toFixed(1)
-                    : "0"}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Problems per day this week
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50">
-            <CardContent className="py-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-sm font-medium">Daily Goal</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {stats?.solvedToday || 0}/3
-                  </p>
-                  <Progress
-                    value={((stats?.solvedToday || 0) / 3) * 100}
-                    className="mt-2"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Weekly Target</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {stats?.solvedThisWeek || 0}/15
-                  </p>
-                  <Progress
-                    value={((stats?.solvedThisWeek || 0) / 15) * 100}
-                    className="mt-2"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Monthly Progress</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {stats?.solvedThisMonth || 0}/50
-                  </p>
-                  <Progress
-                    value={((stats?.solvedThisMonth || 0) / 50) * 100}
-                    className="mt-2"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Activity and Leaderboard */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Contribution Activity</CardTitle>
-                <CardDescription>
-                  Your problem-solving activity over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ContributionGraph />
-              </CardContent>
-            </Card>
-
-            <LeaderboardCard />
-          </div>
-
-          {/* Recent Problems and Add Form */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Problems</CardTitle>
-                <CardDescription>
-                  Your recently solved LeetCode problems
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RecentProblems onProblemAdded={loadStats} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Problem</CardTitle>
-                <CardDescription>Record your latest conquest</CardDescription>
-              </CardHeader>
-              <CardContent>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="lg" className="bg-destructive text-destructive-foreground md:hidden"><Plus /> Log solution</Button>
+              </DialogTrigger>
+              <DialogContent id="log-solution" className="border-2 border-foreground bg-card shadow-[7px_7px_0_0_var(--ink)] sm:max-w-lg">
+                <DialogHeader><div className="retro-kicker">New checkpoint</div><DialogTitle className="text-3xl font-black">Log a solution</DialogTitle></DialogHeader>
                 <AddProblemForm onProblemAdded={loadStats} />
+              </DialogContent>
+            </Dialog>
+          </section>
+
+          <section className="retro-panel grid overflow-hidden md:grid-cols-4" aria-label="Current statistics">
+            {[
+              { label: "Total solved", value: solved, note: `+${stats?.solvedThisWeek || 0} this week`, colour: "bg-accent" },
+              { label: "Current streak", value: `${stats?.currentStreak || 0}d`, note: stats?.streakMessage || "Start today", colour: "bg-[var(--sun)]" },
+              { label: "This month", value: stats?.solvedThisMonth || 0, note: "of 50 target", colour: "bg-secondary" },
+              { label: "Hard clears", value: stats?.hardCount || 0, note: "boss levels beaten", colour: "bg-[var(--coral)] text-white" },
+            ].map((metric, index) => (
+              <div key={metric.label} className={`${metric.colour} p-5 ${index < 3 ? "border-b-2 md:border-b-0 md:border-r-2" : ""} border-foreground`}>
+                <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em]">{metric.label}</p>
+                <p className="mt-2 font-mono text-4xl font-black leading-none md:text-5xl">{metric.value}</p>
+                <p className="mt-2 text-xs font-semibold opacity-75">{metric.note}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr]">
+            <Card className="overflow-hidden bg-primary text-primary-foreground">
+              <CardHeader className="border-b-2 border-[var(--paper)]/30">
+                <div className="flex items-center justify-between"><div><div className="retro-kicker text-primary-foreground before:text-[var(--coral)]">Today&apos;s quest</div><CardTitle className="text-3xl">Three clean solves</CardTitle></div><Target className="h-10 w-10 text-[var(--lime)]" /></div>
+                <CardDescription className="text-primary-foreground/65">Quality reps beat random grinding.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="flex items-end justify-between"><span className="font-mono text-5xl font-black">{stats?.solvedToday || 0}<span className="text-xl text-primary-foreground/50">/3</span></span><span className="font-mono text-xs font-bold uppercase tracking-widest">{dailyPercent >= 100 ? "quest clear" : "in progress"}</span></div>
+                <Progress value={dailyPercent} className="mt-5 h-4 border border-[var(--paper)]/50 bg-white/10" />
+                <div className="mt-6 grid gap-2 font-mono text-xs">
+                  <p className="flex items-center justify-between border-b border-white/15 pb-2"><span>◆ warm-up</span><span className="text-[var(--lime)]">cleared</span></p>
+                  <p className="flex items-center justify-between border-b border-white/15 pb-2"><span>▲ core pattern</span><span className="text-[var(--lime)]">cleared</span></p>
+                  <p className="flex items-center justify-between"><span>■ stretch problem</span><span className="text-[var(--sun)]">next</span></p>
+                </div>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Problem Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Problem Distribution</CardTitle>
-              <CardDescription>Breakdown by difficulty level</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-600 font-medium">Easy</span>
-                    <span>{stats?.easyCount || 0} problems</span>
-                  </div>
-                  <Progress
-                    value={
-                      ((stats?.easyCount || 0) / (stats?.totalSolved || 1)) *
-                      100
-                    }
-                    className="bg-green-100 h-2"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-yellow-600 font-medium">Medium</span>
-                    <span>{stats?.mediumCount || 0} problems</span>
-                  </div>
-                  <Progress
-                    value={
-                      ((stats?.mediumCount || 0) / (stats?.totalSolved || 1)) *
-                      100
-                    }
-                    className="bg-yellow-100 h-2"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-red-600 font-medium">Hard</span>
-                    <span>{stats?.hardCount || 0} problems</span>
-                  </div>
-                  <Progress
-                    value={
-                      ((stats?.hardCount || 0) / (stats?.totalSolved || 1)) *
-                      100
-                    }
-                    className="bg-red-100 h-2"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex-row items-start justify-between space-y-0"><div><div className="retro-kicker">Commit history</div><CardTitle className="text-2xl">Practice activity</CardTitle><CardDescription>Every square is a solved problem.</CardDescription></div><span className="retro-chip bg-accent"><Flame /> {stats?.currentStreak || 0} days</span></CardHeader>
+              <CardContent><ContributionGraph /></CardContent>
+            </Card>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader className="flex-row items-end justify-between space-y-0"><div><div className="retro-kicker">Latest checkpoints</div><CardTitle className="text-2xl">Recent solutions</CardTitle></div><Button asChild variant="link"><a href="/all-problems">Open ledger <ArrowRight /></a></Button></CardHeader>
+              <CardContent><RecentProblems onProblemAdded={loadStats} /></CardContent>
+            </Card>
+            <LeaderboardCard />
+          </section>
+
+          <section className="retro-panel grid overflow-hidden md:grid-cols-[0.65fr_1.35fr]">
+            <div className="bg-secondary p-6 md:p-8"><div className="retro-kicker">Build balance</div><h2 className="text-3xl font-black">Difficulty mix</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">A healthy run mixes confidence builders with harder pattern work.</p><Trophy className="mt-8 h-12 w-12" /></div>
+            <div className="grid gap-6 p-6 md:grid-cols-3 md:p-8">
+              {[
+                ["◆ Easy", stats?.easyCount || 0, "bg-[#1f7a55]"],
+                ["▲ Medium", stats?.mediumCount || 0, "bg-[#9a5b00]"],
+                ["■ Hard", stats?.hardCount || 0, "bg-[#b93846]"],
+              ].map(([label, count, colour]) => (
+                <div key={String(label)}><div className="flex items-center justify-between font-mono text-xs font-black uppercase"><span>{label}</span><span>{count}</span></div><div className="mt-3 h-4 border-2 border-foreground bg-muted"><div className={`h-full ${colour}`} style={{ width: `${(Number(count) / Math.max(solved, 1)) * 100}%` }} /></div></div>
+              ))}
+            </div>
+          </section>
         </div>
       </main>
-      <Toaster />
     </div>
   );
 }

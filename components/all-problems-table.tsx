@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 import {
   Table,
   TableBody,
@@ -38,7 +38,7 @@ export default function AllProblemsTable() {
     name: "",
     difficulty: "all",
   });
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const fetchProblems = useCallback(async () => {
     try {

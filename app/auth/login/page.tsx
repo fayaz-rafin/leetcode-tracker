@@ -7,36 +7,26 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AuthShell } from "@/components/auth-shell";
 import { toast } from "@/hooks/use-toast";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 
 export default function LoginPage() {
   // Remove the unused router
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       setLoading(true);
-      console.log("Attempting login...");
-
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
-      console.log("Login response:", { data, error });
 
       if (error) throw error;
 
@@ -62,15 +52,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <AuthShell eyebrow="Continue your run" title="Load save file." description="Sign in and pick up exactly where your last practice session ended.">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -93,18 +75,16 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+            <Button type="submit" className="w-full bg-destructive text-destructive-foreground" disabled={loading}>
+              {loading ? "Loading save..." : "Log in"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
-            <Link href="/auth/signup" className="text-primary hover:underline">
-              Sign up
+            <Link href="/auth/signup" className="font-bold underline decoration-2 underline-offset-4">
+              Create a save file
             </Link>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+    </AuthShell>
   );
 }

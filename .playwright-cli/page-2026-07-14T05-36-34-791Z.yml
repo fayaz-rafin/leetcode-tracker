@@ -1,0 +1,9 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e4]:
+    - heading "Error Loading Profile" [level=2] [ref=f4e5]
+    - paragraph [ref=f4e6]: User not found
+    - button "Back to Leaderboard" [ref=f4e7]
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=f4e13] [cursor=pointer]
+  - alert [ref=f4e17]

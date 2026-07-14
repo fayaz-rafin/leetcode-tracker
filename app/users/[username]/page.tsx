@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 import {
   Card,
   CardContent,
@@ -27,8 +27,8 @@ import {
   Flame,
   ArrowLeft,
   Code2,
-  Github,
-  Linkedin,
+  GitFork,
+  BriefcaseBusiness,
   Users,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -137,11 +137,11 @@ export default function UserProfilePage() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [loadingFollowers, setLoadingFollowers] = useState(false);
   const [loadingFollowing, setLoadingFollowing] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   useEffect(() => {
     if (!username) return;
-    
+
     async function fetchData() {
       try {
         setLoading(true);
@@ -340,7 +340,7 @@ export default function UserProfilePage() {
   if (error || !profile) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-[400px]">
+        <Card className="w-[calc(100%-2rem)] max-w-[400px]">
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold mb-2">Error Loading Profile</h2>
             <p className="text-muted-foreground mb-4">
@@ -359,8 +359,8 @@ export default function UserProfilePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 py-6">
-        <div className="container max-w-4xl mx-auto px-4 space-y-6">
+      <main className="retro-page">
+        <div className="mx-auto max-w-5xl space-y-8">
           <Button
             variant="ghost"
             onClick={() => router.push("/leaderboard")}
@@ -371,7 +371,7 @@ export default function UserProfilePage() {
           </Button>
 
           {/* Profile Header */}
-          <Card>
+          <Card className="overflow-hidden">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
                 <Avatar className="h-24 w-24">
@@ -381,8 +381,8 @@ export default function UserProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-2xl font-bold">{profile.username}</h1>
+                  <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                    <div className="min-w-0"><div className="retro-kicker">Public player card</div><h1 className="break-all text-4xl font-black md:text-5xl">@{profile.username}</h1></div>
                     {currentUser && currentUser !== profile.id && (
                       <Button
                         variant={isFollowing ? "outline" : "default"}
@@ -392,8 +392,8 @@ export default function UserProfilePage() {
                       </Button>
                     )}
                   </div>
-                  
-                  <div className="flex gap-6 mb-4">
+
+                  <div className="mb-4 flex flex-wrap gap-2 sm:gap-6">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
@@ -453,7 +453,8 @@ export default function UserProfilePage() {
                         href={`https://leetcode.com/${profile.leetcode_handle}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary"
+                        aria-label={`${profile.username}'s LeetCode profile`}
+                        className="grid h-11 w-11 place-items-center border-2 border-foreground text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
                         <Code2 className="h-5 w-5" />
                       </a>
@@ -463,9 +464,10 @@ export default function UserProfilePage() {
                         href={`https://github.com/${profile.github_handle}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary"
+                        aria-label={`${profile.username}'s GitHub profile`}
+                        className="grid h-11 w-11 place-items-center border-2 border-foreground text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
-                        <Github className="h-5 w-5" />
+                        <GitFork className="h-5 w-5" />
                       </a>
                     )}
                     {profile.linkedin_url && (
@@ -473,9 +475,10 @@ export default function UserProfilePage() {
                         href={profile.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary"
+                        aria-label={`${profile.username}'s LinkedIn profile`}
+                        className="grid h-11 w-11 place-items-center border-2 border-foreground text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
-                        <Linkedin className="h-5 w-5" />
+                        <BriefcaseBusiness className="h-5 w-5" />
                       </a>
                     )}
                   </div>
@@ -485,7 +488,7 @@ export default function UserProfilePage() {
           </Card>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -518,7 +521,7 @@ export default function UserProfilePage() {
           </div>
 
           {/* Problems Table */}
-          <Card className="h-[400px]">
+          <Card>
             <CardHeader>
               <CardTitle>Solved Problems</CardTitle>
               <CardDescription>
@@ -526,7 +529,7 @@ export default function UserProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[280px]">
+              <ScrollArea className="h-[360px]">
                 {problems.length > 0 ? (
                   <Table>
                     <TableHeader>

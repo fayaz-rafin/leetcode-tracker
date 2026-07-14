@@ -1,0 +1,111 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - link "LeetTrack dashboard" [ref=f2e5] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=f2e10]: LeetTrack
+        - navigation "Application navigation" [ref=f2e11]:
+          - link "Dashboard" [ref=f2e12] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Problems" [ref=f2e13] [cursor=pointer]:
+            - /url: /all-problems
+          - link "Ranks" [ref=f2e14] [cursor=pointer]:
+            - /url: /leaderboard
+        - generic [ref=f2e15]:
+          - generic [ref=f2e16]: local demo
+          - generic "Current streak" [ref=f2e17]: "12"
+          - link "Log solution" [ref=f2e20] [cursor=pointer]:
+            - /url: /dashboard#log-solution
+          - link "Open profile" [ref=f2e21] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=f2e22]: P
+    - main [ref=f2e24]:
+      - generic [ref=f2e25]:
+        - generic [ref=f2e26]:
+          - generic [ref=f2e27]:
+            - generic [ref=f2e28]: "> Solve archive / 5 records"
+            - heading "Problem ledger" [level=1] [ref=f2e29]
+            - paragraph [ref=f2e30]: Search your history, revisit weak patterns, and choose the next problem with intention.
+          - button "Demo save" [ref=f2e31]
+        - generic [ref=f2e32]:
+          - spinbutton "Problem number" [ref=f2e33]
+          - textbox "Problem name" [ref=f2e34]
+          - combobox [ref=f2e35]:
+            - generic: All Difficulties
+          - combobox [ref=f2e38]:
+            - generic: All Types
+        - table [ref=f2e43]:
+          - rowgroup [ref=f2e44]:
+            - row [ref=f2e45]:
+              - columnheader "Number" [ref=f2e46]
+              - columnheader "Name" [ref=f2e47]
+              - columnheader "Difficulty" [ref=f2e48]
+              - columnheader "Types" [ref=f2e49]
+              - columnheader "Times Solved" [ref=f2e50]
+              - columnheader "Last Solved" [ref=f2e51]
+          - rowgroup [ref=f2e52]:
+            - row [ref=f2e53]:
+              - cell "1" [ref=f2e54]
+              - cell [ref=f2e55]:
+                - button "Two Sum" [ref=f2e56]
+              - cell "◆ Easy" [ref=f2e61]
+              - cell "Array Hash Table" [ref=f2e63]:
+                - generic [ref=f2e64]:
+                  - generic [ref=f2e65]: Array
+                  - generic [ref=f2e66]: Hash Table
+              - cell "3" [ref=f2e67]
+              - cell "7/13/2026" [ref=f2e68]
+            - row [ref=f2e69]:
+              - cell "146" [ref=f2e70]
+              - cell [ref=f2e71]:
+                - button "LRU Cache" [ref=f2e72]
+              - cell "▲ Medium" [ref=f2e77]
+              - cell "Design Linked List" [ref=f2e79]:
+                - generic [ref=f2e80]:
+                  - generic [ref=f2e81]: Design
+                  - generic [ref=f2e82]: Linked List
+              - cell "2" [ref=f2e83]
+              - cell "7/12/2026" [ref=f2e84]
+            - row [ref=f2e85]:
+              - cell "42" [ref=f2e86]
+              - cell [ref=f2e87]:
+                - button "Trapping Rain Water" [ref=f2e88]
+              - cell "■ Hard" [ref=f2e93]
+              - cell "Two Pointers Stack" [ref=f2e95]:
+                - generic [ref=f2e96]:
+                  - generic [ref=f2e97]: Two Pointers
+                  - generic [ref=f2e98]: Stack
+              - cell "1" [ref=f2e99]
+              - cell "7/10/2026" [ref=f2e100]
+            - row [ref=f2e101]:
+              - cell "206" [ref=f2e102]
+              - cell [ref=f2e103]:
+                - button "Reverse Linked List" [ref=f2e104]
+              - cell "◆ Easy" [ref=f2e109]
+              - cell "Linked List Recursion" [ref=f2e111]:
+                - generic [ref=f2e112]:
+                  - generic [ref=f2e113]: Linked List
+                  - generic [ref=f2e114]: Recursion
+              - cell "4" [ref=f2e115]
+              - cell "7/8/2026" [ref=f2e116]
+            - row [ref=f2e117]:
+              - cell "200" [ref=f2e118]
+              - cell [ref=f2e119]:
+                - button "Number of Islands" [ref=f2e120]
+              - cell "▲ Medium" [ref=f2e125]
+              - cell "Graph BFS" [ref=f2e127]:
+                - generic [ref=f2e128]:
+                  - generic [ref=f2e129]: Graph
+                  - generic [ref=f2e130]: BFS
+              - cell "2" [ref=f2e131]
+              - cell "7/6/2026" [ref=f2e132]
+        - generic [ref=f2e133]:
+          - generic [ref=f2e134]: Showing 1 to 5 of 5 problems
+          - generic [ref=f2e135]:
+            - button "Previous" [disabled]
+            - button "Next" [disabled]
+  - region "Notifications (F8)":
+    - list
+  - button "Open Next.js Dev Tools" [ref=f2e141] [cursor=pointer]
+  - alert [ref=f2e145]

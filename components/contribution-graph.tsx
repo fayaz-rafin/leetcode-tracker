@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 import {
   format,
   eachDayOfInterval,
@@ -21,7 +21,7 @@ export function ContributionGraph() {
   const [contributions, setContributions] = useState<ContributionDay[]>([]);
   const [loading, setLoading] = useState(true);
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const fetchContributions = useCallback(async () => {
     try {
@@ -73,11 +73,11 @@ export function ContributionGraph() {
   }, [fetchContributions]);
 
   const getColorForCount = (count: number) => {
-    if (count === 0) return "bg-gray-100 dark:bg-gray-800";
-    if (count <= 1) return "bg-green-100 dark:bg-green-900";
-    if (count <= 3) return "bg-green-300 dark:bg-green-700";
-    if (count <= 5) return "bg-green-500 dark:bg-green-500";
-    return "bg-green-700 dark:bg-green-300";
+    if (count === 0) return "bg-muted";
+    if (count <= 1) return "bg-[#dceaa8]";
+    if (count <= 3) return "bg-accent";
+    if (count <= 5) return "bg-secondary";
+    return "bg-destructive";
   };
 
   const getContributionCount = (date: Date) => {
@@ -139,7 +139,7 @@ export function ContributionGraph() {
                 return (
                   <div
                     key={i}
-                    className={`w-3 h-3 ${getColorForCount(count)} rounded-sm`}
+                    className={`h-3 w-3 border border-foreground/20 ${getColorForCount(count)}`}
                     title={`${count} contributions on ${format(
                       day,
                       "MMM d, yyyy"
@@ -158,7 +158,7 @@ export function ContributionGraph() {
         {[0, 1, 2, 4, 6].map((count) => (
           <div
             key={count}
-            className={`w-3 h-3 rounded-sm ${getColorForCount(count)}`}
+            className={`h-3 w-3 border border-foreground/20 ${getColorForCount(count)}`}
           />
         ))}
         <span>More</span>

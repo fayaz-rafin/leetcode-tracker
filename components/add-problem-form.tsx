@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PlusCircle } from "lucide-react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ export default function AddProblemForm({
   const [problemName, setProblemName] = useState("");
   const [difficulty, setDifficulty] = useState("Easy");
   const [loading, setLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +154,7 @@ export default function AddProblemForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 pt-2">
       <div className="space-y-2">
         <Label htmlFor="problem-number">Problem Number</Label>
         <Input
@@ -189,27 +189,27 @@ export default function AddProblemForm({
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Easy" id="easy" />
-            <Label htmlFor="easy" className="text-green-600 font-medium">
-              Easy
+            <Label htmlFor="easy" className="font-medium">
+              ◆ Easy
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Medium" id="medium" />
-            <Label htmlFor="medium" className="text-yellow-600 font-medium">
-              Medium
+            <Label htmlFor="medium" className="font-medium">
+              ▲ Medium
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Hard" id="hard" />
-            <Label htmlFor="hard" className="text-red-600 font-medium">
-              Hard
+            <Label htmlFor="hard" className="font-medium">
+              ■ Hard
             </Label>
           </div>
         </RadioGroup>
       </div>
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full bg-destructive text-destructive-foreground" disabled={loading}>
         <PlusCircle className="mr-2 h-4 w-4" />
-        {loading ? "Adding Problem..." : "Add Problem"}
+        {loading ? "Saving checkpoint..." : "Log solution"}
       </Button>
     </form>
   );

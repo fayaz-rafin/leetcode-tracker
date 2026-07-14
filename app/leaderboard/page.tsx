@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
+import { DEV_USER } from "@/lib/dev-mode";
 import { Trophy, Flame, Hash, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   // Define fetchLeaderboard function
   const fetchLeaderboard = useCallback(async () => {
@@ -139,18 +140,21 @@ export default function LeaderboardPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 py-6">
-        <div className="container px-4 max-w-4xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <main className="retro-page">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-8 flex flex-col justify-between gap-5 border-b-2 border-foreground pb-8 md:flex-row md:items-end">
             <div>
-              <h1 className="text-2xl font-bold">Leaderboard</h1>
-              <p className="text-sm text-muted-foreground">
-                See how you stack up against other members
+              <div className="retro-kicker">Campus rankings / season 01</div>
+              <h1 className="text-4xl font-black md:text-6xl">High scores</h1>
+              <p className="mt-3 text-muted-foreground">
+                Friendly competition for people who keep showing up.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex border-2 border-foreground bg-card p-1 shadow-[3px_3px_0_0_var(--ink)]">
               <Button
-                variant={leaderboardType === "problems" ? "default" : "outline"}
+                variant={leaderboardType === "problems" ? "default" : "ghost"}
+                className="border-0 shadow-none"
+                aria-pressed={leaderboardType === "problems"}
                 onClick={() => {
                   setLeaderboardType("problems");
                   setCurrentPage(1);
@@ -160,7 +164,9 @@ export default function LeaderboardPage() {
                 Problems Solved
               </Button>
               <Button
-                variant={leaderboardType === "streak" ? "default" : "outline"}
+                variant={leaderboardType === "streak" ? "default" : "ghost"}
+                className="border-0 shadow-none"
+                aria-pressed={leaderboardType === "streak"}
                 onClick={() => {
                   setLeaderboardType("streak");
                   setCurrentPage(1);
@@ -172,7 +178,10 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
-          <Card>
+          <Card className="overflow-hidden">
+            <div className="grid grid-cols-[4rem_1fr_auto] border-b-2 border-foreground bg-primary px-4 py-3 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-primary-foreground">
+              <span>Rank</span><span>Player</span><span>Score</span>
+            </div>
             <CardContent className="p-0">
               {loading ? (
                 <div className="p-4 space-y-4">
@@ -197,16 +206,11 @@ export default function LeaderboardPage() {
                       const globalIndex =
                         (currentPage - 1) * USERS_PER_PAGE + index;
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={user.id}
-                          className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                          className={`flex w-full min-w-0 items-center gap-3 border-b border-foreground/20 p-4 text-left transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-ring sm:gap-4 ${user.id === DEV_USER.id ? "bg-secondary" : ""}`}
                           onClick={() => handleUserClick(user.username)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter")
-                              handleUserClick(user.username);
-                          }}
                         >
                           <div className="w-8 text-center">
                             {globalIndex <= 2 ? (
@@ -223,21 +227,21 @@ export default function LeaderboardPage() {
                               {user.username?.[0]?.toUpperCase() || "?"}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="flex-1 font-medium">
-                            {user.username}
+                          <span className="min-w-0 flex-1 truncate font-medium">
+                            {user.username}{user.id === DEV_USER.id && <span className="ml-2 font-mono text-[10px] font-black uppercase text-destructive">you</span>}
                           </span>
-                          <span className="text-muted-foreground">
+                          <span className="shrink-0 text-right text-sm text-muted-foreground">
                             {leaderboardType === "problems"
                               ? `${user.total_problems} solved`
                               : `${user.current_streak} days`}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
 
                   {/* Pagination */}
-                  <div className="flex items-center justify-between p-4 border-t">
+                  <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-muted-foreground">
                       Showing {(currentPage - 1) * USERS_PER_PAGE + 1} to{" "}
                       {Math.min(currentPage * USERS_PER_PAGE, totalUsers)} of{" "}

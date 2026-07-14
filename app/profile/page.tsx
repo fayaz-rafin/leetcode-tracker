@@ -3,12 +3,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase";
 import {
   Loader2,
   Upload,
-  Github,
-  Linkedin,
+  GitFork,
+  BriefcaseBusiness,
   Code2,
 } from "lucide-react";
 import {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   // Important: Add this function to make the component properly handle the dependency
   // Place this right after your state declarations
@@ -283,13 +283,19 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <main className="retro-page">
+        <div className="mx-auto max-w-4xl space-y-8">
+          <div className="border-b-2 border-foreground pb-8">
+            <div className="retro-kicker">Player settings / identity card</div>
+            <h1 className="text-4xl font-black md:text-6xl">Your profile</h1>
+            <p className="mt-3 max-w-xl text-muted-foreground">Keep the public details useful. Everything else can stay focused on the code.</p>
+          </div>
           {/* Profile Information Card */}
-          <Card className="w-full">
+          <Card className="w-full overflow-hidden">
             <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Your public profile information</CardDescription>
+              <div className="retro-kicker">01 / Identity</div>
+              <CardTitle className="text-2xl">Profile information</CardTitle>
+              <CardDescription>Your public player card.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Avatar Section */}
@@ -303,7 +309,10 @@ export default function ProfilePage() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="avatar" className="cursor-pointer">
+                    <Label
+                      htmlFor="avatar"
+                      className="inline-flex min-h-11 cursor-pointer items-center border-2 border-foreground bg-card px-4 font-mono text-xs font-black uppercase shadow-[3px_3px_0_0_var(--ink)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring"
+                    >
                       <div className="flex items-center gap-2">
                         <Upload className="h-4 w-4" />
                         <span>
@@ -314,7 +323,7 @@ export default function ProfilePage() {
                         id="avatar"
                         type="file"
                         accept="image/*"
-                        className="hidden"
+                        className="sr-only"
                         onChange={handleAvatarChange}
                         disabled={uploading}
                       />
@@ -354,10 +363,11 @@ export default function ProfilePage() {
           </Card>
 
           {/* Bio & Social Links Card */}
-          <Card className="w-full">
+          <Card className="w-full overflow-hidden">
             <CardHeader>
-              <CardTitle>Bio & Social Links</CardTitle>
-              <CardDescription>Tell others about yourself</CardDescription>
+              <div className="retro-kicker">02 / Developer links</div>
+              <CardTitle className="text-2xl">Bio and links</CardTitle>
+              <CardDescription>A short intro and the places your work lives.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleProfileUpdate} className="space-y-6">
@@ -401,7 +411,7 @@ export default function ProfilePage() {
                         htmlFor="github"
                         className="flex items-center gap-2"
                       >
-                        <Github className="h-4 w-4" />
+                        <GitFork className="h-4 w-4" />
                         GitHub Handle
                       </Label>
                       <Input
@@ -417,7 +427,7 @@ export default function ProfilePage() {
                         htmlFor="linkedin"
                         className="flex items-center gap-2"
                       >
-                        <Linkedin className="h-4 w-4" />
+                        <BriefcaseBusiness className="h-4 w-4" />
                         LinkedIn URL
                       </Label>
                       <Input
@@ -447,7 +457,8 @@ export default function ProfilePage() {
                         href={`https://leetcode.com/${leetcodeHandle}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary"
+                        aria-label="Open LeetCode profile"
+                        className="grid h-11 w-11 place-items-center border-2 border-foreground text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
                         <Code2 className="h-5 w-5" />
                       </a>
@@ -457,9 +468,10 @@ export default function ProfilePage() {
                         href={`https://github.com/${githubHandle}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary"
+                        aria-label="Open GitHub profile"
+                        className="grid h-11 w-11 place-items-center border-2 border-foreground text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
-                        <Github className="h-5 w-5" />
+                        <GitFork className="h-5 w-5" />
                       </a>
                     )}
                     {linkedinUrl && (
@@ -467,9 +479,10 @@ export default function ProfilePage() {
                         href={linkedinUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary"
+                        aria-label="Open LinkedIn profile"
+                        className="grid h-11 w-11 place-items-center border-2 border-foreground text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
-                        <Linkedin className="h-5 w-5" />
+                        <BriefcaseBusiness className="h-5 w-5" />
                       </a>
                     )}
                   </div>
